@@ -1,0 +1,567 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String                @id @default(uuid()) @db.Uuid
+  email                 String                @unique
+  password              String
+  firstName             String                @map("first_name")
+  lastName              String                @map("last_name")
+  role                  UserRole              @default(FREE)
+  isActive              Boolean               @default(true) @map("is_active")
+  emailVerified         Boolean               @default(false) @map("email_verified")
+  avatar                String?
+  lastLoginAt           DateTime?             @map("last_login_at")
+  totpSecret            String?               @map("totp_secret")
+  totpEnabled           Boolean               @default(false) @map("totp_enabled")
+  totpBackupCodes       String[]              @default([]) @map("totp_backup_codes")
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+  lastPasswordChangeAt  DateTime?             @map("last_password_change_at")
+  microsoftAccessToken  String?               @map("microsoft_access_token")
+  microsoftAccountId    String?               @unique @map("microsoft_account_id")
+  microsoftConnectedAt  DateTime?             @map("microsoft_connected_at")
+  microsoftEmail        String?               @map("microsoft_email")
+  microsoftName         String?               @map("microsoft_name")
+  microsoftRefreshToken String?               @map("microsoft_refresh_token")
+  microsoftTokenExpiry  DateTime?             @map("microsoft_token_expiry")
+  googleAccountId       String?               @unique @map("google_account_id")
+  googleEmail           String?               @map("google_email")
+  googleName            String?               @map("google_name")
+  googleAccessToken     String?               @map("google_access_token")
+  googleRefreshToken    String?               @map("google_refresh_token")
+  googleTokenExpiry     DateTime?             @map("google_token_expiry")
+  googleConnectedAt     DateTime?             @map("google_connected_at")
+  archivedOpportunities ArchivedOpportunity[]
+  dmChats1              DMChat[]              @relation("DMChatUser1")
+  dmChats2              DMChat[]              @relation("DMChatUser2")
+  dmMessages            DMMessage[]
+  dropboxConnection     DropboxConnection?
+  emailVerifications    EmailVerification[]   @relation("UserEmailVerifications")
+  filters               Filter[]
+  jobs                  Job[]
+  keywords              Keyword[]             @relation("UserKeywords")
+  notifications         Notification[]
+  searchHistory         SearchHistory[]
+  stripeCustomers       StripeCustomer?
+  stripePayments        StripePayment[]
+  stripeSubscriptions   StripeSubscription?
+  subscription          Subscription?         @relation("UserSubscription")
+  chatMessages          TeamChatMessage[]
+  sentInvitations       TeamInvitation[]      @relation("InvitationSender")
+  teamMemberships       TeamMember[]
+  createdTeams          Team[]                @relation("TeamCreator")
+  preferences           UserPreferences?
+  tokens                UserToken[]
+  webauthnCredentials   WebAuthnCredential[]
+  teams                 Team[]                @relation("UserTeams")
+
+  @@map("users")
+}
+
+model Team {
+  id            String            @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  purpose       String?
+  createdBy     String            @map("created_by") @db.Uuid
+  isActive      Boolean           @default(true) @map("is_active")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+  filters       Filter[]
+  keywords      Keyword[]         @relation("TeamKeywords")
+  notifications Notification[]
+  searchHistory SearchHistory[]
+  chatMessages  TeamChatMessage[]
+  invitations   TeamInvitation[]
+  teamMembers   TeamMember[]
+  creator       User              @relation("TeamCreator", fields: [createdBy], references: [id])
+  members       User[]            @relation("UserTeams")
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  teamId    String   @map("team_id") @db.Uuid
+  role      TeamRole @default(MEMBER)
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  team      Team     @relation(fields: [teamId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, teamId])
+  @@map("team_members")
+}
+
+model TeamInvitation {
+  id            String           @id @default(uuid()) @db.Uuid
+  teamId        String           @map("team_id") @db.Uuid
+  email         String
+  invitedBy     String           @map("invited_by") @db.Uuid
+  status        InvitationStatus @default(PENDING)
+  expiresAt     DateTime         @map("expires_at")
+  token         String?          @unique
+  role          TeamRole         @default(MEMBER)
+  customMessage String?
+  acceptedAt    DateTime?        @map("accepted_at")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+  inviter       User             @relation("InvitationSender", fields: [invitedBy], references: [id])
+  team          Team             @relation(fields: [teamId], references: [id])
+
+  @@map("team_invitations")
+}
+
+model TeamChatMessage {
+  id        String            @id @default(uuid()) @db.Uuid
+  teamId    String            @map("team_id") @db.Uuid
+  userId    String            @map("user_id") @db.Uuid
+  content   String
+  type      MessageType       @default(TEXT)
+  replyTo   String?           @map("reply_to") @db.Uuid
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+  parent    TeamChatMessage?  @relation("MessageReply", fields: [replyTo], references: [id])
+  replies   TeamChatMessage[] @relation("MessageReply")
+  team      Team              @relation(fields: [teamId], references: [id])
+  user      User              @relation(fields: [userId], references: [id])
+
+  @@map("team_chat_messages")
+}
+
+model DMChat {
+  id        String      @id @default(uuid()) @db.Uuid
+  userId1   String      @map("user_id_1") @db.Uuid
+  userId2   String      @map("user_id_2") @db.Uuid
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  user1     User        @relation("DMChatUser1", fields: [userId1], references: [id])
+  user2     User        @relation("DMChatUser2", fields: [userId2], references: [id])
+  messages  DMMessage[]
+
+  @@unique([userId1, userId2])
+  @@map("dm_chats")
+}
+
+model DMMessage {
+  id        String      @id @default(uuid()) @db.Uuid
+  chatId    String      @map("chat_id") @db.Uuid
+  userId    String      @map("user_id") @db.Uuid
+  content   String
+  type      MessageType @default(TEXT)
+  replyTo   String?     @map("reply_to") @db.Uuid
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+  chat      DMChat      @relation(fields: [chatId], references: [id])
+  parent    DMMessage?  @relation("DMMessageReply", fields: [replyTo], references: [id])
+  replies   DMMessage[] @relation("DMMessageReply")
+  user      User        @relation(fields: [userId], references: [id])
+
+  @@map("dm_messages")
+}
+
+model Opportunity {
+  id                        String                @id @default(uuid()) @db.Uuid
+  noticeId                  String                @unique @map("notice_id")
+  title                     String
+  solicitationNumber        String?               @map("solicitation_number")
+  fullParentPathName        String?               @map("full_parent_path_name")
+  fullParentPathCode        String?               @map("full_parent_path_code")
+  postedDate                DateTime?             @map("posted_date")
+  type                      String?
+  baseType                  String?               @map("base_type")
+  archiveType               String?               @map("archive_type")
+  archiveDate               DateTime?             @map("archive_date")
+  typeOfSetAsideDescription String?               @map("type_of_set_aside_description")
+  typeOfSetAside            String?               @map("type_of_set_aside")
+  responseDeadLine          DateTime?             @map("response_dead_line")
+  naicsCode                 String?               @map("naics_code")
+  naicsCodes                Json?
+  classificationCode        String?               @map("classification_code")
+  active                    String?
+  award                     Json?
+  pointOfContact            Json?                 @map("point_of_contact")
+  description               String?
+  detailedDescription       String?               @map("detailed_description")
+  organizationType          String?               @map("organization_type")
+  officeAddress             Json?                 @map("office_address")
+  placeOfPerformance        Json?                 @map("place_of_performance")
+  additionalInfoLink        String?               @map("additional_info_link")
+  uiLink                    String?               @map("ui_link")
+  links                     Json?
+  resourceLinks             Json?                 @map("resource_links")
+  attachments               Json?
+  isActive                  Boolean               @default(true) @map("is_active")
+  createdAt                 DateTime              @default(now()) @map("created_at")
+  updatedAt                 DateTime              @updatedAt @map("updated_at")
+  archivedByUsers           ArchivedOpportunity[]
+  filterOpportunities       FilterOpportunity[]
+
+  @@map("opportunities")
+}
+
+model Job {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  title       String
+  description String?
+  company     String?
+  location    String?
+  url         String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("jobs")
+}
+
+model UserToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @unique
+  type      String
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("user_tokens")
+}
+
+model Subscription {
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @unique @map("user_id") @db.Uuid
+  planId          String    @map("plan_id")
+  status          String    @default("active")
+  startDate       DateTime  @map("start_date")
+  endDate         DateTime? @map("end_date")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  autoRenew       Boolean   @default(true) @map("auto_renew")
+  currency        String    @default("USD")
+  features        Json?     @default("{}")
+  lastPaymentDate DateTime? @map("last_payment_date")
+  metadata        Json?     @default("{}")
+  nextPaymentDate DateTime? @map("next_payment_date")
+  paymentMethod   String?   @map("payment_method")
+  planType        String    @map("plan_type")
+  price           Float?    @default(0)
+  user            User      @relation("UserSubscription", fields: [userId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model Filter {
+  id                         String              @id @default(uuid()) @db.Uuid
+  userId                     String              @map("user_id") @db.Uuid
+  teamId                     String?             @map("team_id") @db.Uuid
+  name                       String
+  description                String?
+  naturalLanguageDescription String?             @map("natural_language_description")
+  criteria                   Json
+  isActive                   Boolean             @default(true) @map("is_active")
+  createdAt                  DateTime            @default(now()) @map("created_at")
+  updatedAt                  DateTime            @updatedAt @map("updated_at")
+  deadlineReminderDays       Json                @default("[7, 3, 1]") @map("deadline_reminder_days")
+  isSaved                    Boolean             @default(true) @map("is_saved")
+  lastPolledAt               DateTime?           @map("last_polled_at")
+  lastSearchAt               DateTime?           @map("last_search_at")
+  nextPollAt                 DateTime?           @map("next_poll_at")
+  notifyOnDeadlineReminder   Boolean             @default(true) @map("notify_on_deadline_reminder")
+  notifyOnNewOpportunities   Boolean             @default(true) @map("notify_on_new_opportunities")
+  opportunityCount           Int                 @default(0) @map("opportunity_count")
+  pollingInterval            Int                 @default(60) @map("polling_interval")
+  searchCount                Int                 @default(0) @map("search_count")
+  filterOpportunities        FilterOpportunity[]
+  team                       Team?               @relation(fields: [teamId], references: [id])
+  user                       User                @relation(fields: [userId], references: [id])
+
+  @@map("filters")
+}
+
+model FilterOpportunity {
+  id            String      @id @default(uuid()) @db.Uuid
+  filterId      String      @map("filter_id") @db.Uuid
+  opportunityId String      @map("opportunity_id") @db.Uuid
+  createdAt     DateTime    @default(now()) @map("created_at")
+  filter        Filter      @relation(fields: [filterId], references: [id])
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id])
+
+  @@unique([filterId, opportunityId])
+  @@map("filter_opportunities")
+}
+
+model ArchivedOpportunity {
+  id                    String      @id @default(uuid()) @db.Uuid
+  userId                String      @map("user_id") @db.Uuid
+  opportunityId         String      @map("opportunity_id") @db.Uuid
+  isDropboxSynced       Boolean     @default(false) @map("is_dropbox_synced")
+  dropboxSyncedAt       DateTime?   @map("dropbox_synced_at")
+  dropboxFolderId       String?     @map("dropbox_folder_id")
+  attachmentCount       Int         @default(0) @map("attachment_count")
+  syncedAttachmentCount Int         @default(0) @map("synced_attachment_count")
+  syncStatus            SyncStatus  @default(PENDING) @map("sync_status")
+  syncError             String?     @map("sync_error")
+  archivedAt            DateTime    @default(now()) @map("archived_at")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+  opportunity           Opportunity @relation(fields: [opportunityId], references: [id])
+  user                  User        @relation(fields: [userId], references: [id])
+
+  @@unique([userId, opportunityId])
+  @@map("archived_opportunities")
+}
+
+model DropboxConnection {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @unique @map("user_id") @db.Uuid
+  accessToken  String    @map("access_token")
+  refreshToken String?   @map("refresh_token")
+  accountId    String    @map("account_id")
+  email        String?
+  displayName  String?   @map("display_name")
+  expiresAt    DateTime? @map("expires_at")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  user         User      @relation(fields: [userId], references: [id])
+
+  @@map("dropbox_connections")
+}
+
+model StripeCustomer {
+  id               String               @id @default(uuid()) @db.Uuid
+  userId           String               @unique @map("user_id") @db.Uuid
+  stripeCustomerId String               @unique @map("stripe_customer_id")
+  email            String
+  createdAt        DateTime             @default(now()) @map("created_at")
+  updatedAt        DateTime             @updatedAt @map("updated_at")
+  user             User                 @relation(fields: [userId], references: [id])
+  payments         StripePayment[]
+  subscriptions    StripeSubscription[]
+
+  @@map("stripe_customers")
+}
+
+model StripeSubscription {
+  id                   String             @id @default(uuid()) @db.Uuid
+  userId               String             @unique @map("user_id") @db.Uuid
+  stripeSubscriptionId String             @unique @map("stripe_subscription_id")
+  stripeCustomerId     String             @map("stripe_customer_id")
+  status               SubscriptionStatus
+  currentPeriodStart   DateTime           @map("current_period_start")
+  currentPeriodEnd     DateTime           @map("current_period_end")
+  cancelAtPeriodEnd    Boolean            @default(false) @map("cancel_at_period_end")
+  canceledAt           DateTime?          @map("canceled_at")
+  trialStart           DateTime?          @map("trial_start")
+  trialEnd             DateTime?          @map("trial_end")
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  customer             StripeCustomer     @relation(fields: [stripeCustomerId], references: [stripeCustomerId])
+  user                 User               @relation(fields: [userId], references: [id])
+
+  @@map("stripe_subscriptions")
+}
+
+model StripePayment {
+  id                    String         @id @default(uuid()) @db.Uuid
+  userId                String         @map("user_id") @db.Uuid
+  stripePaymentIntentId String         @unique @map("stripe_payment_intent_id")
+  amount                Int
+  currency              String         @default("usd")
+  status                PaymentStatus
+  description           String?
+  metadata              Json?
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedAt             DateTime       @updatedAt @map("updated_at")
+  stripeCustomerId      String         @map("stripe_customer_id")
+  customer              StripeCustomer @relation(fields: [stripeCustomerId], references: [stripeCustomerId])
+  user                  User           @relation(fields: [userId], references: [id])
+
+  @@map("stripe_payments")
+}
+
+model Notification {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  teamId        String?  @map("team_id") @db.Uuid
+  type          String
+  title         String
+  message       String?
+  opportunityId String?  @map("opportunity_id") @db.Uuid
+  filterId      String?  @map("filter_id") @db.Uuid
+  isRead        Boolean  @default(false) @map("is_read")
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  team          Team?    @relation(fields: [teamId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model UserPreferences {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @unique @map("user_id") @db.Uuid
+  searchPreferences Json?    @default("{}") @map("search_preferences")
+  rankingWeights    Json?    @default("{}") @map("ranking_weights")
+  regions           Json?    @default("[]")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@map("user_preferences")
+}
+
+model EmailVerification {
+  id        String           @id @default(uuid()) @db.Uuid
+  email     String
+  token     String           @unique
+  otp       String?          @unique
+  type      VerificationType
+  expiresAt DateTime         @map("expires_at")
+  createdAt DateTime         @default(now()) @map("created_at")
+  isUsed    Boolean          @default(false) @map("is_used")
+  userId    String?          @map("user_id") @db.Uuid
+  user      User?            @relation("UserEmailVerifications", fields: [userId], references: [id])
+
+  @@map("email_verifications")
+}
+
+model Keyword {
+  id               String    @id @default(uuid()) @db.Uuid
+  keyword          String
+  description      String?
+  userId           String?   @map("user_id") @db.Uuid
+  teamId           String?   @map("team_id") @db.Uuid
+  isActive         Boolean   @default(true) @map("is_active")
+  lastSearchedAt   DateTime? @map("last_searched_at")
+  searchCount      Int       @default(0) @map("search_count")
+  opportunityCount Int       @default(0) @map("opportunity_count")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  team             Team?     @relation("TeamKeywords", fields: [teamId], references: [id])
+  user             User?     @relation("UserKeywords", fields: [userId], references: [id])
+
+  @@map("keywords")
+}
+
+model WebAuthnCredential {
+  id                   String   @id @default(uuid()) @db.Uuid
+  userId               String   @map("user_id") @db.Uuid
+  credentialId         Bytes    @unique @map("credential_id")
+  publicKey            Bytes    @map("public_key")
+  counter              Int      @default(0)
+  transports           String[] @default([])
+  aaguid               String?
+  credentialDeviceType String?  @map("credential_device_type")
+  credentialBackedUp   Boolean  @default(false) @map("credential_backed_up")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  user                 User     @relation(fields: [userId], references: [id])
+
+  @@map("webauthn_credentials")
+}
+
+model SearchHistory {
+  id             String     @id @default(uuid()) @db.Uuid
+  userId         String     @map("user_id") @db.Uuid
+  teamId         String?    @map("team_id") @db.Uuid
+  searchType     SearchType @map("search_type")
+  query          String?
+  filters        Json
+  searchParams   Json       @map("search_params")
+  resultCount    Int        @default(0) @map("result_count")
+  isFavorite     Boolean    @default(false) @map("is_favorite")
+  tags           String[]   @default([])
+  name           String?
+  description    String?
+  createdAt      DateTime   @default(now()) @map("created_at")
+  lastExecutedAt DateTime?  @map("last_executed_at")
+  executionCount Int        @default(1) @map("execution_count")
+  team           Team?      @relation(fields: [teamId], references: [id])
+  user           User       @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([teamId, createdAt])
+  @@index([userId, isFavorite])
+  @@map("search_history")
+}
+
+enum UserRole {
+  FREE
+  PREMIUM
+  ENTERPRISE
+  ADMIN
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+  CANCELLED
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  UNPAID
+  INCOMPLETE
+  TRIALING
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+  REFUNDED
+}
+
+enum VerificationType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  EMAIL_CHANGE
+}
+
+enum SyncStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum SearchType {
+  KEYWORD
+  AI_POWERED
+  ADVANCED_FILTERS
+  SAVED_FILTER
+  NATURAL_LANGUAGE
+}

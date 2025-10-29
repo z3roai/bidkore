@@ -1,0 +1,175 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: rgb(var(--sidebar-ring));
+  --color-sidebar-border: rgb(var(--sidebar-border));
+  --color-sidebar-accent-foreground: rgb(var(--sidebar-accent-foreground));
+  --color-sidebar-accent: rgb(var(--sidebar-accent));
+  --color-sidebar-primary-foreground: rgb(var(--sidebar-primary-foreground));
+  --color-sidebar-primary: rgb(var(--sidebar-primary));
+  --color-sidebar-foreground: rgb(var(--sidebar-foreground));
+  --color-sidebar: rgb(var(--sidebar));
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: rgb(var(--ring));
+  --color-input: rgb(var(--input));
+  --color-border: rgb(var(--border));
+  --color-card-hover: rgb(var(--card-hover));
+  --color-account-bg: rgb(var(--account-bg));
+  --color-account-name: rgb(var(--account-name));
+  --color-account-email: rgb(var(--account-email));
+  --color-main-gradient-start: rgb(var(--main-gradient-start));
+  --color-main-gradient-end: rgb(var(--main-gradient-end));
+  --color-action-icon-bg: rgb(var(--action-icon-bg));
+  --color-action-icon-border: rgb(var(--action-icon-border));
+  --color-destructive: rgb(var(--destructive));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+  --color-accent: rgb(var(--accent));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-muted: rgb(var(--muted));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+  --color-secondary: rgb(var(--secondary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+  --color-primary: rgb(var(--primary));
+  --color-popover-foreground: rgb(var(--popover-foreground));
+  --color-popover: rgb(var(--popover));
+  --color-card-foreground: rgb(var(--card-foreground));
+  --color-card: rgb(var(--card));
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.5rem;
+  /* Light mode - New color scheme */
+  --background: 247 247 247; /* #F7F7F7 - Total dashboard page base color */
+  --foreground: 38 38 38; /* #262626 */
+  --card: 255 255 255; /* #FFFFFF - Card color */
+  --card-foreground: 38 38 38; /* #262626 */
+  --popover: 255 255 255; /* #FFFFFF */
+  --popover-foreground: 38 38 38; /* #262626 */
+  --primary: 49 131 255; /* #3183FF - Blue accent color */
+  --primary-foreground: 255 255 255; /* #FFFFFF */
+  --secondary: 230 230 230; /* #E6E6E6 - Card border color */
+  --secondary-foreground: 38 38 38; /* #262626 */
+  --muted: 255 255 255; /* #FFFFFF - Main section color */
+  --muted-foreground: 107 114 128; /* #6B7280 */
+  --accent: 230 230 230; /* #E6E6E6 - Card border color */
+  --accent-foreground: 38 38 38; /* #262626 */
+  --destructive: 239 68 68; /* #EF4444 */
+  --destructive-foreground: 255 255 255; /* #FFFFFF */
+  --border: 230 230 230; /* #E6E6E6 - Card border color */
+  --input: 230 230 230; /* #E6E6E6 - Input border color */
+  --ring: 49 131 255; /* #3183FF - Blue ring color */
+  --card-hover: 248 248 248; /* #F8F8F8 - Card hover background */
+  --account-bg: 38 38 38; /* #262626 - Account card background */
+  --account-name: 255 255 255; /* #FFFFFF - Account name color */
+  --account-email: 165 165 165; /* #A5A5A5 - Account email color */
+  --main-gradient-start: 255 255 255; /* #FFFFFF - Main section color */
+  --main-gradient-end: 255 255 255; /* #FFFFFF - Main section color */
+  --main-content-bg: rgb(var(--muted)); /* Use main section color */
+  --action-icon-bg: 255 255 255; /* #FFFFFF - Action icon background */
+  --action-icon-border: 230 230 230; /* #E6E6E6 - Action icon border */
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  /* Dark mode - Professional colors */
+  --background: 10 10 10; /* #0A0A0A */
+  --foreground: 245 245 245; /* #F5F5F5 */
+  --card: 26 26 26; /* #1A1A1A */
+  --card-foreground: 245 245 245; /* #F5F5F5 */
+  --popover: 26 26 26; /* #1A1A1A */
+  --popover-foreground: 245 245 245; /* #F5F5F5 */
+  --primary: 74 158 255; /* #4A9EFF - Lighter blue for better contrast */
+  --primary-foreground: 10 10 10; /* #0A0A0A */
+  --secondary: 42 42 42; /* #2A2A2A */
+  --secondary-foreground: 245 245 245; /* #F5F5F5 */
+  --muted: 26 26 26; /* #1A1A1A */
+  --muted-foreground: 156 163 175; /* #9CA3AF */
+  --accent: 42 42 42; /* #2A2A2A */
+  --accent-foreground: 245 245 245; /* #F5F5F5 */
+  --destructive: 239 68 68; /* #EF4444 */
+  --destructive-foreground: 245 245 245; /* #F5F5F5 */
+  --border: 42 42 42; /* #2A2A2A */
+  --input: 42 42 42; /* #2A2A2A */
+  --ring: 74 158 255; /* #4A9EFF - Lighter blue ring color */
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .bg-main-content {
+    background: var(--main-content-bg);
+  }
+  
+  .bg-main-content-dark {
+    background: rgb(var(--card));
+  }
+  
+  .action-icon {
+    background-color: rgb(var(--card));
+    border-color: rgb(var(--border));
+  }
+  
+  /* Force circular progress chart text color */
+  .circular-progress-text {
+    fill: rgb(var(--foreground)) !important;
+  }
+  
+  /* Target SVG text elements specifically */
+  .circular-progress-text text,
+  .circular-progress-text tspan {
+    fill: rgb(var(--foreground)) !important;
+  }
+  
+  /* Even more specific targeting */
+  svg text,
+  svg tspan {
+    fill: rgb(var(--foreground)) !important;
+  }
+}

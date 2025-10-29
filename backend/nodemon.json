@@ -1,0 +1,11 @@
+{
+	"watch": ["src", ".env", "prisma/schema.prisma"],
+	"ext": "ts,ftsx,mts,cts,json,env",
+	"ignore": [
+		"src/**/*.spec.ts",
+		"src/**/*.test.ts",
+		"node_modules/**",
+		"dist/**"
+	],
+	"exec": "tsx src/index.ts"
+}

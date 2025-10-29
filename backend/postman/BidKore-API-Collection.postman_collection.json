@@ -1,0 +1,2233 @@
+{
+  "info": {
+    "name": "BidKore Backend API",
+    "description": "Complete API collection for BidKore - Government Contract Bidding Platform",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "teamId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "filterId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "opportunityId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"turnstileToken\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('authToken', response.token);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"turnstileToken\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login with TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePassword123!\",\n  \"token\": \"123456\",\n  \"verificationToken\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login-totp",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login-totp"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"verification-token-here\",\n  \"otp\": \"\",\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-email"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resend Verification Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"includeOTP\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/resend-verification",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "resend-verification"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"reset-token-here\",\n  \"newPassword\": \"NewSecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"OldPassword123!\",\n  \"newPassword\": \"NewPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "password"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "avatar"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Avatar",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "avatar"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/user/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "settings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emailNotifications\": true,\n  \"pushNotifications\": false,\n  \"timezone\": \"America/New_York\",\n  \"language\": \"en\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/settings",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "settings"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"Password123!\",\n  \"confirmation\": \"DELETE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/account",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "account"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "TOTP (2FA)",
+      "item": [
+        {
+          "name": "Generate TOTP Secret",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/totp/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["totp", "generate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Enable TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"123456\",\n  \"secret\": \"generated-secret-from-previous-call\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/totp/enable",
+              "host": ["{{baseUrl}}"],
+              "path": ["totp", "enable"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disable TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/totp/disable",
+              "host": ["{{baseUrl}}"],
+              "path": ["totp", "disable"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify TOTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/totp/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["totp", "verify"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Backup Codes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/totp/backup-codes",
+              "host": ["{{baseUrl}}"],
+              "path": ["totp", "backup-codes"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Regenerate Backup Codes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/totp/backup-codes/regenerate",
+              "host": ["{{baseUrl}}"],
+              "path": ["totp", "backup-codes", "regenerate"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "WebAuthn (Passkeys)",
+      "item": [
+        {
+          "name": "Generate Registration Options",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webauthn/generate-registration-options",
+              "host": ["{{baseUrl}}"],
+              "path": ["webauthn", "generate-registration-options"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credential\": {},\n  \"nickname\": \"My MacBook\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webauthn/verify-registration",
+              "host": ["{{baseUrl}}"],
+              "path": ["webauthn", "verify-registration"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Authentication Options",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webauthn/generate-authentication-options",
+              "host": ["{{baseUrl}}"],
+              "path": ["webauthn", "generate-authentication-options"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Authentication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"credential\": {},\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/webauthn/verify-authentication",
+              "host": ["{{baseUrl}}"],
+              "path": ["webauthn", "verify-authentication"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Credentials",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webauthn/credentials",
+              "host": ["{{baseUrl}}"],
+              "path": ["webauthn", "credentials"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Credential",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/webauthn/credentials/:credentialId",
+              "host": ["{{baseUrl}}"],
+              "path": ["webauthn", "credentials", ":credentialId"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Opportunities",
+      "item": [
+        {
+          "name": "Search Opportunities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/opportunities?page=1&limit=20&sort=postedDate&order=desc&search=&agency=&type=&setAsideCode=&naicsCode=&state=&zipCode=&placeOfPerformance=",
+              "host": ["{{baseUrl}}"],
+              "path": ["opportunities"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "sort",
+                  "value": "postedDate"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "agency",
+                  "value": ""
+                },
+                {
+                  "key": "type",
+                  "value": ""
+                },
+                {
+                  "key": "setAsideCode",
+                  "value": ""
+                },
+                {
+                  "key": "naicsCode",
+                  "value": ""
+                },
+                {
+                  "key": "state",
+                  "value": ""
+                },
+                {
+                  "key": "zipCode",
+                  "value": ""
+                },
+                {
+                  "key": "placeOfPerformance",
+                  "value": ""
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Opportunity Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/opportunities/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["opportunities", ":id"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Archive Opportunity",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Saved for later review\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/opportunities/:id/archive",
+              "host": ["{{baseUrl}}"],
+              "path": ["opportunities", ":id", "archive"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unarchive Opportunity",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/opportunities/:id/archive",
+              "host": ["{{baseUrl}}"],
+              "path": ["opportunities", ":id", "archive"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Archived Opportunities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/opportunities/archived?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["opportunities", "archived"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Similar Opportunities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/opportunities/:id/similar",
+              "host": ["{{baseUrl}}"],
+              "path": ["opportunities", ":id", "similar"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Opportunity Attachments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/opportunities/:id/attachments",
+              "host": ["{{baseUrl}}"],
+              "path": ["opportunities", ":id", "attachments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Download Attachment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/opportunities/:id/attachments/:attachmentId/download",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "opportunities",
+                ":id",
+                "attachments",
+                ":attachmentId",
+                "download"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Filters",
+      "item": [
+        {
+          "name": "Get All Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/filters?page=1&limit=10&sort=createdAt&order=desc&isActive=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "order",
+                  "value": "desc"
+                },
+                {
+                  "key": "isActive",
+                  "value": "true"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Filter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('filterId', response.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"IT Services Filter\",\n  \"keywords\": [\"software\", \"development\", \"cloud\", \"IT\"],\n  \"agencies\": [],\n  \"setAsideCodes\": [],\n  \"naicsCodes\": [\"541511\", \"541512\"],\n  \"pscs\": [],\n  \"states\": [\"CA\", \"TX\", \"NY\"],\n  \"postedDateFrom\": null,\n  \"postedDateTo\": null,\n  \"dueDateFrom\": null,\n  \"dueDateTo\": null,\n  \"awardDateFrom\": null,\n  \"awardDateTo\": null,\n  \"excludeKeywords\": [\"construction\", \"medical\"],\n  \"contractTypes\": [\"Firm Fixed Price\"],\n  \"awardAmountMin\": 50000,\n  \"awardAmountMax\": 1000000,\n  \"isActive\": true,\n  \"emailNotifications\": true,\n  \"frequency\": \"daily\",\n  \"notificationHour\": 9,\n  \"notificationTimezone\": \"America/New_York\",\n  \"includeAttachments\": false,\n  \"searchDescription\": true,\n  \"searchTitle\": true,\n  \"exactMatch\": false,\n  \"notificationEmails\": []\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/filters",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Filter by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/filters/{{filterId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters", "{{filterId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Filter",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated IT Services Filter\",\n  \"keywords\": [\"software\", \"development\", \"cloud\", \"IT\", \"cybersecurity\"],\n  \"isActive\": true,\n  \"emailNotifications\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/filters/{{filterId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters", "{{filterId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Filter",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/filters/{{filterId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters", "{{filterId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Filter Active Status",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/filters/{{filterId}}/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters", "{{filterId}}", "toggle"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Filter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"keywords\": [\"software\", \"development\"],\n  \"agencies\": [],\n  \"states\": [\"CA\"],\n  \"limit\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/filters/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters", "test"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Filter Opportunities",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/filters/{{filterId}}/opportunities?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters", "{{filterId}}", "opportunities"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Run Filter Now",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/filters/{{filterId}}/run",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters", "{{filterId}}", "run"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Filter Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/filters/{{filterId}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["filters", "{{filterId}}", "stats"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Features",
+      "item": [
+        {
+          "name": "AI Search",
+          "item": [
+            {
+              "name": "AI Search Opportunities",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"query\": \"Find IT services contracts for cloud migration\",\n  \"context\": {\n    \"includeRelated\": true,\n    \"maxResults\": 20,\n    \"filters\": {\n      \"states\": [\"CA\", \"TX\"],\n      \"minAmount\": 100000\n    }\n  }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/ai/search",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["ai", "search"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get AI Service Status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/ai/status",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["ai", "status"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Test Query Conversion",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"query\": \"software development contracts over 500k\",\n  \"context\": {}\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/ai/test-conversion",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["ai", "test-conversion"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "AI Filter Analytics",
+          "item": [
+            {
+              "name": "Get Performance Report",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/ai-filter-analytics/performance-report",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["ai-filter-analytics", "performance-report"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Consistency Check",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/ai-filter-analytics/consistency-check",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["ai-filter-analytics", "consistency-check"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Filter Metrics",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/ai-filter-analytics/{{filterId}}/metrics",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["ai-filter-analytics", "{{filterId}}", "metrics"]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Teams",
+      "item": [
+        {
+          "name": "Team Management",
+          "item": [
+            {
+              "name": "Get My Teams",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Create Team",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('teamId', response.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Engineering Team\",\n  \"description\": \"Team for engineering contracts\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/teams",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Team Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Team",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Engineering Team\",\n  \"description\": \"Updated description for engineering contracts team\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Team",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Leave Team",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/leave",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}", "leave"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Team Members",
+          "item": [
+            {
+              "name": "Get Team Members",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/members",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}", "members"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Member Role",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"role\": \"admin\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/members/:memberId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}", "members", ":memberId"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Remove Team Member",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/members/:memberId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}", "members", ":memberId"]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Team Invitations",
+          "item": [
+            {
+              "name": "Send Invitation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"newmember@example.com\",\n  \"role\": \"member\",\n  \"message\": \"Join our engineering team!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/invitations",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}", "invitations"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get Team Invitations",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/invitations",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}", "invitations"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get My Invitations",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/invitations",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "invitations"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Accept Invitation",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/invitations/:invitationId/accept",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "invitations", ":invitationId", "accept"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Decline Invitation",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/invitations/:invitationId/decline",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "invitations", ":invitationId", "decline"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Cancel Invitation",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/invitations/:invitationId",
+                  "host": ["{{baseUrl}}"],
+                  "path": [
+                    "teams",
+                    "{{teamId}}",
+                    "invitations",
+                    ":invitationId"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Team Chat",
+          "item": [
+            {
+              "name": "Get Chat Messages",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/chat?page=1&limit=50",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}", "chat"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "50"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Send Chat Message",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"message\": \"Hello team!\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/chat",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}", "chat"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Chat Message",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/teams/{{teamId}}/chat/:messageId",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["teams", "{{teamId}}", "chat", ":messageId"]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "DM Chat",
+      "item": [
+        {
+          "name": "Get All Chats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dm-chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["dm-chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create DM Chat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipientId\": \"recipient-user-id\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/dm-chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["dm-chat"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Chat Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dm-chat/:chatId/messages?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["dm-chat", ":chatId", "messages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hello! How are you?\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/dm-chat/:chatId/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["dm-chat", ":chatId", "messages"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Message",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dm-chat/:chatId/messages/:messageId",
+              "host": ["{{baseUrl}}"],
+              "path": ["dm-chat", ":chatId", "messages", ":messageId"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications?page=1&limit=20&unreadOnly=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "unreadOnly",
+                  "value": "false"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/:notificationId/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", ":notificationId", "read"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "read-all"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/:notificationId",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", ":notificationId"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Notification Preferences",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "preferences"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Notification Preferences",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"emailNotifications\": true,\n  \"newOpportunities\": true,\n  \"filterMatches\": true,\n  \"teamInvites\": true,\n  \"teamMessages\": false,\n  \"systemUpdates\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/preferences",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "preferences"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stripe & Payments",
+      "item": [
+        {
+          "name": "Create Checkout Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priceId\": \"price_1234567890\",\n  \"successUrl\": \"http://localhost:3000/dashboard\",\n  \"cancelUrl\": \"http://localhost:3000/pricing\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stripe/create-checkout-session",
+              "host": ["{{baseUrl}}"],
+              "path": ["stripe", "create-checkout-session"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Customer Portal Session",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stripe/create-portal-session",
+              "host": ["{{baseUrl}}"],
+              "path": ["stripe", "create-portal-session"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stripe/payment-history",
+              "host": ["{{baseUrl}}"],
+              "path": ["stripe", "payment-history"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current Subscription",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stripe/subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["stripe", "subscription"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Subscription",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stripe/cancel-subscription",
+              "host": ["{{baseUrl}}"],
+              "path": ["stripe", "cancel-subscription"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pricing Plans",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stripe/plans",
+              "host": ["{{baseUrl}}"],
+              "path": ["stripe", "plans"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Microsoft Integration",
+      "item": [
+        {
+          "name": "Get Auth URL",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/microsoft/auth-url",
+              "host": ["{{baseUrl}}"],
+              "path": ["microsoft", "auth-url"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Handle Callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"authorization-code-from-microsoft\",\n  \"state\": \"state-value\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/microsoft/callback",
+              "host": ["{{baseUrl}}"],
+              "path": ["microsoft", "callback"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Microsoft Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/microsoft/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["microsoft", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disconnect Microsoft Account",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/microsoft/disconnect",
+              "host": ["{{baseUrl}}"],
+              "path": ["microsoft", "disconnect"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dropbox Integration",
+      "item": [
+        {
+          "name": "Connect Dropbox",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dropbox/connect",
+              "host": ["{{baseUrl}}"],
+              "path": ["dropbox", "connect"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dropbox Callback",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dropbox/callback?code=auth-code&state=state-value",
+              "host": ["{{baseUrl}}"],
+              "path": ["dropbox", "callback"],
+              "query": [
+                {
+                  "key": "code",
+                  "value": "auth-code"
+                },
+                {
+                  "key": "state",
+                  "value": "state-value"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Dropbox Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dropbox/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["dropbox", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disconnect Dropbox",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dropbox/disconnect",
+              "host": ["{{baseUrl}}"],
+              "path": ["dropbox", "disconnect"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Search History",
+      "item": [
+        {
+          "name": "Get Search History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search-history?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["search-history"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Save Search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"cloud computing contracts\",\n  \"filters\": {\n    \"states\": [\"CA\"],\n    \"minAmount\": 100000\n  },\n  \"results\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/search-history",
+              "host": ["{{baseUrl}}"],
+              "path": ["search-history"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Search History Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search-history/:historyId",
+              "host": ["{{baseUrl}}"],
+              "path": ["search-history", ":historyId"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clear All Search History",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/search-history",
+              "host": ["{{baseUrl}}"],
+              "path": ["search-history"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Track Page View",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"page\": \"/dashboard\",\n  \"referrer\": \"/login\",\n  \"userAgent\": \"Mozilla/5.0...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/analytics/track/page-view",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "track", "page-view"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Track Interaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"click\",\n  \"element\": \"filter-button\",\n  \"value\": \"create-new\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/analytics/track/interaction",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "track", "interaction"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Track Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"engagement\",\n  \"action\": \"opportunity-viewed\",\n  \"label\": \"opportunity-123\",\n  \"value\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/analytics/track/event",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "track", "event"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Track Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"session-123\",\n  \"duration\": 3600,\n  \"pages\": 15,\n  \"events\": 42\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/analytics/track/session",
+              "host": ["{{baseUrl}}"],
+              "path": ["analytics", "track", "session"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Subscriptions",
+      "item": [
+        {
+          "name": "Get Subscription Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Subscription Limits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/limits",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "limits"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Usage Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptions/usage",
+              "host": ["{{baseUrl}}"],
+              "path": ["subscriptions", "usage"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "Get System Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/logs?level=info&limit=100&startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["logs"],
+              "query": [
+                {
+                  "key": "level",
+                  "value": "info"
+                },
+                {
+                  "key": "limit",
+                  "value": "100"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Error Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/logs/errors",
+              "host": ["{{baseUrl}}"],
+              "path": ["logs", "errors"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Queue",
+      "item": [
+        {
+          "name": "Get Queue Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/queue/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["queue", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Active Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/queue/jobs/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["queue", "jobs", "active"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Failed Jobs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/queue/jobs/failed",
+              "host": ["{{baseUrl}}"],
+              "path": ["queue", "jobs", "failed"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Retry Failed Job",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/queue/jobs/:jobId/retry",
+              "host": ["{{baseUrl}}"],
+              "path": ["queue", "jobs", ":jobId", "retry"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "API Version",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/version",
+          "host": ["{{baseUrl}}"],
+          "path": ["version"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: bidkore-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-bidkore}
+      POSTGRES_USER: ${POSTGRES_USER:-bidkore}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bidkore_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bidkore}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: bidkore-redis
+    command: >
+      sh -c "
+      if [ -n \"$${REDIS_PASSWORD}\" ]; then
+        redis-server --requirepass $${REDIS_PASSWORD} --save 60 1 --loglevel warning
+      else
+        redis-server --save 60 1 --loglevel warning
+      fi
+    "
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: >
+        sh -c "
+        if [ -n \"$${REDIS_PASSWORD}\" ]; then
+          redis-cli -a $${REDIS_PASSWORD} ping
+        else
+          redis-cli ping
+        fi
+      "
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
