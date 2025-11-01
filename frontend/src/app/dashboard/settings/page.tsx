@@ -7,7 +7,7 @@ import Breadcrumb from "@/components/dashboard/breadcrumb";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import MainButton from "@/components/main-button";
 import {
   Card,
@@ -122,13 +122,13 @@ export default function SettingsPage() {
         <div className="flex-1 space-y-6 pb-24">
           {/* Notifications Section */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pt-5 pb-2">
               <CardTitle className="flex items-center gap-2">
                 <Bell className="h-5 w-5" />
                 Notifications
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-6 py-5">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="text-sm font-medium text-foreground">
@@ -197,24 +197,26 @@ export default function SettingsPage() {
 
           {/* Appearance Section */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pt-5 pb-2">
               <CardTitle className="flex items-center gap-2">
                 <Moon className="h-5 w-5" />
                 Appearance
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-6 py-5">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
                   Theme
                 </label>
-                <Select
-                  value={theme}
-                  onChange={(e) => setTheme(e.target.value)}
-                >
-                  <option value="Light">Light</option>
-                  <option value="Dark">Dark</option>
-                  <option value="System">System</option>
+                <Select value={theme} onValueChange={setTheme}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select theme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Light">Light</SelectItem>
+                    <SelectItem value="Dark">Dark</SelectItem>
+                    <SelectItem value="System">System</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
 
@@ -222,13 +224,15 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-foreground">
                   Sidebar Display
                 </label>
-                <Select
-                  value={sidebarDisplay}
-                  onChange={(e) => setSidebarDisplay(e.target.value)}
-                >
-                  <option value="Expanded">Expanded</option>
-                  <option value="Collapsed">Collapsed</option>
-                  <option value="Auto">Auto</option>
+                <Select value={sidebarDisplay} onValueChange={setSidebarDisplay}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select display" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Expanded">Expanded</SelectItem>
+                    <SelectItem value="Collapsed">Collapsed</SelectItem>
+                    <SelectItem value="Auto">Auto</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </CardContent>
@@ -236,26 +240,28 @@ export default function SettingsPage() {
 
           {/* Language & Region Section */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pt-5 pb-2">
               <CardTitle className="flex items-center gap-2">
                 <Globe className="h-5 w-5" />
                 Language & Region
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-6 py-5">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">
                   Language
                 </label>
-                <Select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                >
-                  <option value="English (US)">English (US)</option>
-                  <option value="English (UK)">English (UK)</option>
-                  <option value="Spanish">Spanish</option>
-                  <option value="French">French</option>
-                  <option value="German">German</option>
+                <Select value={language} onValueChange={setLanguage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="English (US)">English (US)</SelectItem>
+                    <SelectItem value="English (UK)">English (UK)</SelectItem>
+                    <SelectItem value="Spanish">Spanish</SelectItem>
+                    <SelectItem value="French">French</SelectItem>
+                    <SelectItem value="German">German</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
 
@@ -263,15 +269,17 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-foreground">
                   Timezone
                 </label>
-                <Select
-                  value={timezone}
-                  onChange={(e) => setTimezone(e.target.value)}
-                >
-                  <option value="Pacific Time (PT)">Pacific Time (PT)</option>
-                  <option value="Mountain Time (MT)">Mountain Time (MT)</option>
-                  <option value="Central Time (CT)">Central Time (CT)</option>
-                  <option value="Eastern Time (ET)">Eastern Time (ET)</option>
-                  <option value="UTC">UTC</option>
+                <Select value={timezone} onValueChange={setTimezone}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select timezone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Pacific Time (PT)">Pacific Time (PT)</SelectItem>
+                    <SelectItem value="Mountain Time (MT)">Mountain Time (MT)</SelectItem>
+                    <SelectItem value="Central Time (CT)">Central Time (CT)</SelectItem>
+                    <SelectItem value="Eastern Time (ET)">Eastern Time (ET)</SelectItem>
+                    <SelectItem value="UTC">UTC</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </CardContent>
@@ -279,13 +287,13 @@ export default function SettingsPage() {
 
           {/* Privacy & Security Section */}
           <Card>
-            <CardHeader>
+            <CardHeader className="pt-5 pb-2">
               <CardTitle className="flex items-center gap-2">
                 <Shield className="h-5 w-5" />
                 Privacy & Security
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-6 py-5">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <div className="text-sm font-medium text-foreground">
@@ -325,13 +333,13 @@ export default function SettingsPage() {
 
           {/* Danger Zone Section */}
           <Card className="border-destructive/50 bg-destructive/5">
-            <CardHeader>
+            <CardHeader className="pt-5 pb-2">
               <CardTitle className="flex items-center gap-2 text-destructive">
                 <AlertTriangle className="h-5 w-5" />
                 Danger Zone
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-6">
+            <CardContent className="space-y-4 py-5">
               <div className="space-y-2">
                 <div className="text-sm font-medium text-foreground">
                   Delete Account

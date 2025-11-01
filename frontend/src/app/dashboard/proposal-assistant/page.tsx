@@ -76,8 +76,8 @@ export default function ProposalAssistantPage() {
     <div className="bg-background h-full flex flex-col p-6">
       {/* Main Content Container with White Background */}
       <div className="bg-card rounded-lg p-6 shadow-sm flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Main column */}
-        <div className="flex flex-col lg:col-span-8 xl:col-span-9">
+        {/* Header row spanning full width */}
+        <div className="lg:col-span-12">
           {/* Breadcrumb */}
           <Breadcrumb
             items={[{ label: "Home", href: "/" }, { label: "Proposal Assistant" }]}
@@ -115,11 +115,14 @@ export default function ProposalAssistantPage() {
               ))}
             </div>
           </div>
+        </div>
 
+        {/* Main column */}
+        <div className="flex flex-col lg:col-span-8 xl:col-span-9">
           {activeTab === "new" && (
             <>
               {/* Stepper (read-only, with connectors) */}
-              <Card className="mt-6">
+              <Card>
                 <CardContent className="p-5">
                   <div className="flex items-center">
                     {[
@@ -194,7 +197,7 @@ export default function ProposalAssistantPage() {
           )}
 
           {activeTab === "drafts" && (
-            <Card className="mt-6">
+            <Card>
               <CardContent className="p-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {savedDrafts.map((d) => (
@@ -218,7 +221,7 @@ export default function ProposalAssistantPage() {
 
           {/* Submitted tab */}
           {activeTab === "submitted" && (
-            <Card className="mt-6">
+            <Card>
               <CardContent className="p-5">
                 <div className="space-y-4">
                   {[

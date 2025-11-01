@@ -37,7 +37,7 @@ function MiniMonthlyActivity() {
 
   return (
     <Card className="bg-card border border-border">
-      <CardHeader className="pb-2">
+      <CardHeader className="pt-5 pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Monthly Activity</CardTitle>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -49,7 +49,7 @@ function MiniMonthlyActivity() {
         </div>
         <CardDescription>Usage trends over time</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="py-5">
         <div className="grid grid-cols-6 gap-3 h-32 items-end">
           {values.map((v, i) => (
             <div key={months[i]} className="flex flex-col items-center gap-1">
@@ -106,16 +106,20 @@ export default function UsagePage() {
   return (
     <div className="bg-background h-full flex flex-col p-6">
       <div className="bg-card rounded-lg p-6 shadow-sm flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="flex flex-col lg:col-span-8 xl:col-span-9">
+        {/* Header row spanning full width */}
+        <div className="lg:col-span-12">
           <Breadcrumb items={[{ label: "Home", href: "/" }, { label: "Usage" }]} className="mb-6" />
 
           <div className="mb-2">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">Usage</h1>
             <p className="text-muted-foreground mt-1">Track your platform usage and subscription details.</p>
           </div>
+        </div>
+
+        <div className="flex flex-col lg:col-span-8 xl:col-span-9">
 
           {/* Top stat cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <StatCard title="Total Searches" value={156} change={"+12%"} />
             <StatCard title="Proposals Generated" value={23} change={"+8%"} />
             <StatCard title="Documents Uploaded" value={48} change={"-3%"} />
@@ -133,13 +137,13 @@ export default function UsagePage() {
 
             {/* Recent Activity */}
             <Card className="bg-card border border-border">
-              <CardHeader className="pb-2">
+              <CardHeader className="pt-5 pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Recent Activity</CardTitle>
                   <Button size="sm" variant="outline">View All</Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="py-5">
                 <div className="space-y-3">
                   {[
                     "Searched for \"Cybersecurity RFP\"",
@@ -162,11 +166,11 @@ export default function UsagePage() {
         {/* Right column */}
         <div className="flex flex-col lg:col-span-4 xl:col-span-3 gap-6">
           {/* Usage by Category */}
-          <Card className="bg-card border border-border">
-            <CardHeader className="pb-2">
+            <Card className="bg-card border border-border">
+              <CardHeader className="pt-5 pb-2">
               <CardTitle className="text-base">Usage by Category</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+              <CardContent className="space-y-4 py-5">
               <UsageBar label="AI Search" value={42} />
               <UsageBar label="Proposal Generation" value={28} />
               <UsageBar label="Document Analysis" value={18} />
@@ -175,13 +179,13 @@ export default function UsagePage() {
           </Card>
 
           {/* Current Plan */}
-          <Card className="bg-card border border-border">
-            <CardHeader className="pb-2">
+            <Card className="bg-card border border-border">
+              <CardHeader className="pt-5 pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 Current Plan <span className="text-[10px] px-1.5 py-0.5 rounded border border-border text-muted-foreground">Professional</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-sm space-y-2">
+              <CardContent className="text-sm space-y-2 py-5">
               <div className="flex items-center justify-between"><span className="text-muted-foreground">Monthly Price</span><span className="text-foreground font-medium">$99 / month</span></div>
               <div className="flex items-center justify-between"><span className="text-muted-foreground">Billing Cycle</span><span className="text-foreground">Monthly</span></div>
               <div className="flex items-center justify-between"><span className="text-muted-foreground">Next Billing Date</span><span className="text-foreground">June 1, 2025</span></div>
@@ -194,14 +198,14 @@ export default function UsagePage() {
           </Card>
 
           {/* Top Searches */}
-          <Card className="bg-card border border-border">
-            <CardHeader className="pb-2">
+            <Card className="bg-card border border-border">
+              <CardHeader className="pt-5 pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Top Searches</CardTitle>
                 <span className="text-xs text-muted-foreground">Last 30 days</span>
               </div>
             </CardHeader>
-            <CardContent>
+              <CardContent className="py-5">
               <ol className="list-decimal list-inside space-y-1 text-sm">
                 <li>IT Infrastructure <span className="text-muted-foreground">— 24 searches</span></li>
                 <li>Cybersecurity Services <span className="text-muted-foreground">— 18 searches</span></li>
