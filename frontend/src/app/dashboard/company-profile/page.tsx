@@ -67,10 +67,10 @@ export default function CompanyProfilePage() {
 
         {/* Company Logo Section */}
         <Card className="mb-6">
-          <CardHeader>
+          <CardHeader className="pt-5 pb-2">
             <CardTitle>Company Logo</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-5">
             <div className="flex items-center gap-6">
               <div className="flex items-center justify-center w-48 h-48 border-2 border-dashed border-muted-foreground/30 rounded-lg bg-muted/20">
                 <FileText className="w-12 h-12 text-muted-foreground" />
@@ -85,10 +85,10 @@ export default function CompanyProfilePage() {
 
         {/* Company Information Section */}
         <Card className="mb-6">
-          <CardHeader>
+          <CardHeader className="pt-5 pb-2">
             <CardTitle>Company Information</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Company Name</label>
@@ -139,10 +139,10 @@ export default function CompanyProfilePage() {
 
         {/* Business Details Section */}
         <Card className="mb-6">
-          <CardHeader>
+          <CardHeader className="pt-5 pb-2">
             <CardTitle>Business Details</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-5">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1.5">Company Description</label>
@@ -181,10 +181,10 @@ export default function CompanyProfilePage() {
 
         {/* Certifications Section */}
         <Card className="mb-6">
-          <CardHeader>
+          <CardHeader className="pt-5 pb-2">
             <CardTitle>Certifications</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-5">
             <div className="flex flex-wrap gap-2 mb-4">
               {certifications.map((cert) => (
                 <div
@@ -214,10 +214,10 @@ export default function CompanyProfilePage() {
 
         {/* NAICS Codes Section */}
         <Card className="mb-6">
-          <CardHeader>
+          <CardHeader className="pt-5 pb-2">
             <CardTitle>NAICS Codes</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="py-5">
             <div className="flex flex-wrap gap-2 mb-4">
               {naicsCodes.map((code) => (
                 <div
@@ -259,4 +259,6 @@ export default function CompanyProfilePage() {
     </div>
   );
 }
+
+
 

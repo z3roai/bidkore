@@ -86,8 +86,8 @@ export default function DocumentLibraryPage() {
     <div className="bg-background h-full flex flex-col p-6">
       {/* Main Content Container with White Background */}
       <div className="bg-card rounded-lg p-6 shadow-sm flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Main column */}
-        <div className="flex flex-col lg:col-span-8 xl:col-span-9">
+        {/* Header row spanning full width */}
+        <div className="lg:col-span-12">
           {/* Breadcrumb */}
           <Breadcrumb
             items={[{ label: "Home", href: "/dashboard" }, { label: "Document Library" }]}
@@ -166,9 +166,13 @@ export default function DocumentLibraryPage() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Main column */}
+        <div className="flex flex-col lg:col-span-8 xl:col-span-9">
 
           {/* Document Grid/List */}
-          <div className="mt-6 flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto">
             {viewMode === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredDocuments.map((doc) => (
