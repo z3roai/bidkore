@@ -470,9 +470,10 @@ export default function TeamPage() {
 													<DropdownMenuLabel>Actions</DropdownMenuLabel>
 													<DropdownMenuSeparator />
 													<DropdownMenuItem onClick={() => {
+														if (m.userId === (session?.user?.id ?? "")) return
 														const content = window.prompt("Message")?.trim() ?? ""
 														if (content) void handleSendMessage(content)
-													}}>Send message</DropdownMenuItem>
+													}} disabled={m.userId === (session?.user?.id ?? "")}>Send message</DropdownMenuItem>
 													<DropdownMenuItem>Reset MFA</DropdownMenuItem>
 													<DropdownMenuSeparator />
 													<DropdownMenuItem className="text-rose-600" disabled={!isAdmin && m.userId !== (session?.user?.id ?? "")} onClick={() => handleRemoveMember(m.userId)}>
