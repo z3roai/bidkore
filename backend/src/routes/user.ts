@@ -15,8 +15,14 @@ import {
 import { requireEmailVerification } from "@/middleware/emailVerification";
 import { validateRequest } from "@/middleware/validation";
 import User, { toJSON, UserRole } from "@/models/User";
-import { changePasswordSchema, updateProfileSchema } from "@/schemas/user";
+import { changePasswordSchema, updateProfileSchema, userSettingsSchema } from "@/schemas/user";
 import loggingService from "@/services/loggingService";
+import { getUserSettings, upsertUserSettings } from "@/services/preferencesService";
+import { exportUserData } from "@/services/dataExportService";
+import {
+	TeamOwnershipError,
+	deleteUserPermanently,
+} from "@/services/userDeletionService";
 
 const router = Router();
 
@@ -50,6 +56,112 @@ router.get(
 		} catch (error) {
 			loggingService.error("Get users error:", error);
 			res.status(500).json({ error: "Failed to get users" });
+		}
+	}
+);
+
+// Get user settings
+router.get(
+	"/settings",
+	authenticateToken,
+	requireEmailVerification,
+	async (req: AuthRequest, res: Response): Promise<void> => {
+		try {
+			if (!req.user) {
+				res.status(401).json({ error: "User not found" });
+				return;
+			}
+
+			const settings = await getUserSettings(req.user.id);
+			res.json({ settings });
+		} catch (error) {
+			loggingService.error("Get user settings error:", error);
+			res.status(500).json({ error: "Failed to get user settings" });
+		}
+	}
+);
+
+// Update user settings
+router.put(
+	"/settings",
+	authenticateToken,
+	requireEmailVerification,
+	validateRequest(userSettingsSchema),
+	async (req: AuthRequest, res: Response): Promise<void> => {
+		try {
+			if (!req.user) {
+				res.status(401).json({ error: "User not found" });
+				return;
+			}
+
+			const updated = await upsertUserSettings(req.user.id, req.body as Record<string, unknown>);
+			res.json({ message: "Settings updated successfully", settings: updated });
+		} catch (error) {
+			loggingService.error("Update user settings error:", error);
+			res.status(500).json({ error: "Failed to update user settings" });
+		}
+	}
+);
+
+// Export user data
+router.post(
+	"/export",
+	authenticateToken,
+	requireEmailVerification,
+	async (req: AuthRequest, res: Response): Promise<void> => {
+		try {
+			if (!req.user) {
+				res.status(401).json({ error: "User not found" });
+				return;
+			}
+
+			const result = await exportUserData(req.user.id);
+			res.json({ message: "Data export generated", downloadUrl: result.publicUrl });
+		} catch (error) {
+			loggingService.error("Export user data error:", error);
+			res.status(500).json({ error: "Failed to export user data" });
+		}
+	}
+);
+
+// Permanently delete account
+router.delete(
+	"/account/permanent",
+	authenticateToken,
+	requireEmailVerification,
+	async (req: AuthRequest, res: Response): Promise<void> => {
+		try {
+			if (!req.user) {
+				res.status(401).json({ error: "User not found" });
+				return;
+			}
+
+			const { confirm, email } = (req.body || {}) as {
+				confirm?: boolean;
+				email?: string;
+			};
+
+			if (!confirm) {
+				res.status(400).json({ error: "Confirmation required" });
+				return;
+			}
+
+			if (email && email !== req.user.email) {
+				res.status(400).json({ error: "Email does not match current user" });
+				return;
+			}
+
+			await deleteUserPermanently(req.user.id);
+			res.json({ message: "Account permanently deleted" });
+		} catch (error) {
+			if (error instanceof TeamOwnershipError) {
+				res.status(409).json({
+					error: "User owns teams. Transfer ownership or delete teams first.",
+				});
+				return;
+			}
+			loggingService.error("Permanent account deletion error:", error);
+			res.status(500).json({ error: "Failed to permanently delete account" });
 		}
 	}
 );

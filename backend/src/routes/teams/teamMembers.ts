@@ -10,7 +10,9 @@ import { type AuthRequest, authenticateToken } from "@/middleware/auth";
 import { TeamRole } from "@/models";
 import User from "@/models/User";
 import { addMemberSchema } from "@/routes/teams/schemas";
+import { updateTeamMemberRoleSchema } from "@/schemas/team";
 import { isTeamAdmin } from "@/routes/teams/utils";
+import { updateTeamMemberRole as updateMemberRole } from "@/models/TeamMember";
 import loggingService from "@/services/loggingService";
 
 const router = Router();
@@ -196,3 +198,70 @@ router.delete(
 );
 
 export default router;
+
+// Update team member role
+router.put(
+	"/:id/members/:userId/role",
+	authenticateToken,
+	async (req: AuthRequest, res: Response): Promise<void> => {
+		try {
+			if (!req.user) {
+				res.status(401).json({ error: "User not found" });
+				return;
+			}
+
+			const teamIdParam = req.params["id"];
+			const userIdParam = req.params["userId"];
+			if (!teamIdParam || !userIdParam) {
+				res.status(400).json({ error: "Team ID and user ID are required" });
+				return;
+			}
+
+			const teamId = teamIdParam.toString();
+			const targetUserId = userIdParam.toString();
+
+			// Check if acting user is admin of this team
+			if (!(await isTeamAdmin(req.user.id, teamId))) {
+				res.status(403).json({ error: "Only team admins can update roles" });
+				return;
+			}
+
+			const parsed = updateTeamMemberRoleSchema.safeParse(req.body);
+			if (!parsed.success) {
+				res.status(400).json({ error: parsed.error.issues[0]?.message ?? "Validation error" });
+				return;
+			}
+
+			const role = parsed.data.role.toLowerCase() as "owner" | "admin" | "member";
+			const roleMap = { owner: TeamRole.OWNER, admin: TeamRole.ADMIN, member: TeamRole.MEMBER } as const;
+			const mappedRole = roleMap[role];
+
+			const updated = await updateMemberRole(targetUserId, teamId, mappedRole);
+
+			loggingService.logUserAction("update_team_member_role", req.user.id, req.user.role, {
+				teamId,
+				targetUserId,
+				role: mappedRole,
+			});
+
+			res.json({
+				message: "Member role updated",
+				member: {
+					id: updated.id,
+					teamId: updated.teamId,
+					userId: updated.userId,
+					role: updated.role,
+					joinedAt: updated.joinedAt,
+				},
+			});
+		} catch (error: unknown) {
+			loggingService.logUserError(
+				"update_team_member_role",
+				req.user?.id ?? "0",
+				req.user?.role ?? "unknown",
+				error instanceof Error ? error : new Error(String(error))
+			);
+			res.status(500).json({ error: "Failed to update team member role" });
+		}
+	}
+);

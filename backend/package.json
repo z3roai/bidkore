@@ -29,6 +29,7 @@
 	"author": "BidKore Team",
 	"license": "MIT",
 	"dependencies": {
+		"adm-zip": "^0.5.16",
 		"@azure/msal-node": "3.7.4",
 		"@prisma/client": "^6.16.2",
 		"@sendgrid/mail": "^8.1.5",

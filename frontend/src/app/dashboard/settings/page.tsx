@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
+import { useTheme } from "next-themes";
+import { useToast } from "@/components/ui/toast";
 import Image from "next/image";
 import Breadcrumb from "@/components/dashboard/breadcrumb";
 import { Switch } from "@/components/ui/switch";
@@ -36,6 +38,8 @@ import {
 
 export default function SettingsPage() {
   const { data: session } = useSession();
+  const { setTheme: setGlobalTheme } = useTheme();
+  const { addToast } = useToast();
 
   // Notification states
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -64,37 +68,139 @@ export default function SettingsPage() {
   const userEmail = session?.user?.email || "Raymondmc@bidkore.co";
   const userAvatar = session?.user?.image || undefined;
 
-  const handleSaveSettings = () => {
-    // TODO: Implement API call to save settings
-    console.log("Saving settings...", {
-      emailNotifications,
-      pushNotifications,
-      weeklyDigest,
-      marketingEmails,
-      theme,
-      sidebarDisplay,
-      language,
-      timezone,
-      sessionTimeout,
-    });
-    // Show success toast/notification
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (!apiBase || !session?.accessToken) return;
+      try {
+        const resp = await fetch(`${apiBase}/users/settings`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.accessToken as string}`,
+          },
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const s = (data?.settings ?? {}) as Record<string, unknown>;
+        if (typeof s.emailNotifications === "boolean") setEmailNotifications(s.emailNotifications);
+        if (typeof s.pushNotifications === "boolean") setPushNotifications(s.pushNotifications);
+        if (typeof s.weeklyDigest === "boolean") setWeeklyDigest(s.weeklyDigest);
+        if (typeof s.marketingEmails === "boolean") setMarketingEmails(s.marketingEmails);
+        if (typeof s.theme === "string") setTheme(s.theme as string);
+        if (typeof s.sidebarDisplay === "string") setSidebarDisplay(s.sidebarDisplay as string);
+        if (typeof s.language === "string") setLanguage(s.language as string);
+        if (typeof s.timezone === "string") setTimezone(s.timezone as string);
+        if (typeof s.sessionTimeout === "boolean") setSessionTimeout(s.sessionTimeout);
+      } catch (e) {
+        console.error("Failed to load settings", e);
+      }
+    };
+    void loadSettings();
+  }, [apiBase, session?.accessToken]);
+
+  useEffect(() => {
+    const t = theme?.toLowerCase();
+    if (t === "light" || t === "dark" || t === "system") {
+      setGlobalTheme(t);
+    }
+  }, [theme, setGlobalTheme]);
+
+  const handleSaveSettings = async () => {
+    if (!apiBase || !session?.accessToken) return;
+    try {
+      const resp = await fetch(`${apiBase}/users/settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken as string}`,
+        },
+        body: JSON.stringify({
+          emailNotifications,
+          pushNotifications,
+          weeklyDigest,
+          marketingEmails,
+          theme,
+          sidebarDisplay,
+          language,
+          timezone,
+          sessionTimeout,
+        }),
+      });
+      if (resp.ok) {
+        addToast({
+          title: "Settings saved",
+          description: "Your preferences were updated.",
+          variant: "success",
+        });
+      } else {
+        const err = await resp.text();
+        addToast({
+          title: "Save failed",
+          description: err || "Unable to update settings.",
+          variant: "error",
+        });
+        console.error("Failed to save settings", err);
+      }
+    } catch (e) {
+      console.error("Error saving settings", e);
+      addToast({
+        title: "Network error",
+        description: "Failed to reach the server.",
+        variant: "error",
+      });
+    }
   };
 
-  const handleDownloadData = () => {
+  const handleDownloadData = async () => {
     setShowDownloadDialog(false);
-    // TODO: Implement data download API call
-    console.log("Downloading user data...");
+    if (!apiBase || !session?.accessToken) return;
+    try {
+      const resp = await fetch(`${apiBase}/users/export`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken as string}`,
+        },
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const url = (data?.downloadUrl as string) || undefined;
+        if (url) window.open(url, "_blank");
+      } else {
+        console.error("Failed to request export", await resp.text());
+      }
+    } catch (e) {
+      console.error("Export request error", e);
+    }
   };
 
-  const handleDeleteAccount = () => {
-    setIsDeleting(true);
-    // TODO: Implement account deletion API call
-    setTimeout(() => {
+  const handleDeleteAccount = async () => {
+    if (!apiBase || !session?.accessToken) return;
+    try {
+      setIsDeleting(true);
+      const resp = await fetch(`${apiBase}/users/account/permanent`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.accessToken as string}`,
+        },
+        body: JSON.stringify({ confirm: true, email: session?.user?.email }),
+      });
       setIsDeleting(false);
       setShowDeleteDialog(false);
-      // Redirect to sign out or home page
-      console.log("Account deleted");
-    }, 2000);
+      if (resp.ok) {
+        await signOut({ callbackUrl: "/signin" });
+      } else if (resp.status === 409) {
+        console.error("Deletion blocked: team ownership");
+      } else {
+        console.error("Failed to delete account", await resp.text());
+      }
+    } catch (e) {
+      setIsDeleting(false);
+      console.error("Delete account error", e);
+    }
   };
 
   return (
@@ -362,35 +468,12 @@ export default function SettingsPage() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="sticky bottom-0 left-0 right-0 h-20 bg-card border-t border-border flex items-center justify-between px-6 mt-auto -mb-6 -mx-6 rounded-b-lg">
-        {/* User Profile */}
-        <div className="flex items-center gap-3 bg-background rounded-lg px-4 py-2">
-          {userAvatar ? (
-            <Image
-              src={userAvatar}
-              alt={userName}
-              width={32}
-              height={32}
-              className="rounded-full"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-foreground/10 flex items-center justify-center text-sm font-medium text-foreground">
-              {userName.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div className="flex flex-col">
-            <div className="text-sm font-medium text-foreground">
-              {userName}
-            </div>
-            <div className="text-xs text-muted-foreground">{userEmail}</div>
-          </div>
+        <div className="sticky bottom-0 left-0 right-0 h-20 bg-card border-t border-border flex items-center justify-end px-6 mt-auto -mb-6 -mx-6 rounded-b-lg">
+          {/* Save Settings Button */}
+          <MainButton onClick={handleSaveSettings}>
+            Save Settings
+          </MainButton>
         </div>
-
-        {/* Save Settings Button */}
-        <MainButton onClick={handleSaveSettings}>
-          Save Settings
-        </MainButton>
-      </div>
       </div>
 
       {/* Delete Account Dialog */}
