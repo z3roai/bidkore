@@ -310,39 +310,6 @@ function SignInContent() {
             </MainButton>
           </form>
 
-          {/* OAuth Error Display */}
-          {hasOAuthError && (
-            <OAuthErrorDisplay
-              errorParams={oauthErrorParams}
-              onRetry={() => {
-                // Determine which provider to retry based on the error context
-                if (oauthErrorParams.error === "AccessDenied") {
-                  // For access denied, we can't determine which provider failed
-                  // So we'll show a generic retry message
-                  addToast({
-                    title: "Retry Authentication",
-                    description:
-                      "Please try signing in again with your preferred method.",
-                    variant: "default",
-                    duration: 4000,
-                  });
-                }
-              }}
-              onContactSupport={() => {
-                // You can implement contact support functionality here
-                addToast({
-                  title: "Contact Support",
-                  description:
-                    "Please email support@bidkore.com for assistance.",
-                  variant: "default",
-                  duration: 5000,
-                });
-              }}
-              variant="card"
-              className="mb-4"
-            />
-          )}
-
           {/* Divider */}
           <div className="relative">
             <div className="absolute inset-0 flex items-center">

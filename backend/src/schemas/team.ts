@@ -29,6 +29,12 @@ export const updateTeamSchema = z
 			.string()
 			.max(500, "Description must be 500 characters or less")
 			.optional(),
+		purpose: z
+			.string()
+			.min(1, "Purpose is required")
+			.max(200, "Purpose must be 200 characters or less")
+			.optional(),
+		isActive: z.boolean().optional(),
 	})
 	.describe("Team update data");
 

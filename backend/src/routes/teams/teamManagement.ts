@@ -172,6 +172,8 @@ router.get(
 					id: teamResult.id,
 					name: teamResult.name,
 					description: teamResult.description,
+					purpose: (teamResult as unknown as { purpose?: string }).purpose,
+					isActive: (teamResult as unknown as { isActive?: boolean }).isActive,
 					createdBy: teamResult.createdBy,
 					members: teamResult.teamMembers.map((member) => ({
 						id: member.id,
@@ -240,6 +242,12 @@ router.put(
 			if (result.data.description !== undefined) {
 				updateData['description'] = result.data.description;
 			}
+			if ((result.data as { purpose?: string }).purpose !== undefined) {
+				updateData['purpose'] = (result.data as { purpose?: string }).purpose;
+			}
+			if ((result.data as { isActive?: boolean }).isActive !== undefined) {
+				updateData['isActive'] = (result.data as { isActive?: boolean }).isActive;
+			}
 			await Team.update(updateData, { where: { id: teamId } });
 
 			loggingService.logUserAction("update_team", req.user.id, req.user.role, {
@@ -253,6 +261,8 @@ router.put(
 					id: team.id,
 					name: team.name,
 					description: team.description,
+					purpose: (team as unknown as { purpose?: string }).purpose,
+					isActive: (team as unknown as { isActive?: boolean }).isActive,
 					createdBy: team.createdBy,
 					updatedAt: team.updatedAt,
 				},

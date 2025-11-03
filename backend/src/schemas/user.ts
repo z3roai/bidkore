@@ -33,3 +33,22 @@ export const userIdSchema = z
 export type UpdateProfileRequest = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordRequest = z.infer<typeof changePasswordSchema>;
 export type UserIdParams = z.infer<typeof userIdSchema>;
+
+// Settings schema for user UI and notification preferences
+export const userSettingsSchema = z
+	.object({
+		emailNotifications: z.boolean().optional(),
+		pushNotifications: z.boolean().optional(),
+		weeklyDigest: z.boolean().optional(),
+		marketingEmails: z.boolean().optional(),
+		theme: z.enum(["Light", "Dark", "System"]).optional(),
+		sidebarDisplay: z
+			.enum(["Expanded", "Collapsed", "Auto"]) 
+			.optional(),
+		language: z.string().optional(),
+		timezone: z.string().optional(),
+		sessionTimeout: z.boolean().optional(),
+	})
+	.describe("User settings update data");
+
+export type UserSettingsRequest = z.infer<typeof userSettingsSchema>;
