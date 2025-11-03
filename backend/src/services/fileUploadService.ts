@@ -18,10 +18,14 @@ if (!fs.existsSync(uploadsDir)) {
 	fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-// Ensure avatars subdirectory exists
+// Ensure avatars and logos subdirectories exist
 const avatarsDir = path.join(uploadsDir, "avatars");
+const logosDir = path.join(uploadsDir, "logos");
 if (!fs.existsSync(avatarsDir)) {
 	fs.mkdirSync(avatarsDir, { recursive: true });
+}
+if (!fs.existsSync(logosDir)) {
+  fs.mkdirSync(logosDir, { recursive: true });
 }
 
 // Configure multer for avatar uploads
@@ -90,4 +94,53 @@ export const extractFilenameFromUrl = (url: string): string | null => {
 	// Handle both relative and absolute URLs
 	const match = url.match(/\/(?:uploads\/avatars|.*\/uploads\/avatars)\/(.+)$/);
 	return match?.[1] ?? null;
+};
+
+// Logo upload configuration (reusing same fileFilter and limits)
+const logoStorage = multer.diskStorage({
+  destination: (
+    _req: Request,
+    _file: Express.Multer.File,
+    cb: (error: Error | null, destination: string) => void
+  ) => {
+    cb(null, logosDir);
+  },
+  filename: (
+    _req: Request,
+    file: Express.Multer.File,
+    cb: (error: Error | null, filename: string) => void
+  ) => {
+    const uniqueName = `${randomUUID()}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  },
+});
+
+export const uploadLogo = multer({
+  storage: logoStorage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+});
+
+export const getLogoUrl = (filename: string): string => {
+  return `/uploads/logos/${filename}`;
+};
+
+export const deleteLogoFile = (filename: string): void => {
+  try {
+    const filePath = path.join(logosDir, filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      loggingService.info(`Logo file deleted: ${filename}`);
+    }
+  } catch (error) {
+    loggingService.error(`Failed to delete logo file ${filename}:`, error);
+    throw error;
+  }
+};
+
+export const extractLogoFilenameFromUrl = (url: string): string | null => {
+  const match = url.match(/\/(?:uploads\/logos|.*\/uploads\/logos)\/(.+)$/);
+  return match?.[1] ?? null;
 };

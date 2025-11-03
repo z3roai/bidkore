@@ -1,24 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Breadcrumb from "@/components/dashboard/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, X, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
+import { useToast } from "@/components/ui/toast";
+import Image from "next/image";
 
 export default function CompanyProfilePage() {
-  const [companyName, setCompanyName] = useState("TechSolutions Inc.");
-  const [dunsNumber, setDunsNumber] = useState("123456789");
-  const [cageCode, setCageCode] = useState("ABC12");
-  const [ueiNumber, setUeiNumber] = useState("ZYXWVU9876");
-  const [businessAddress, setBusinessAddress] = useState("123 Tech Street, Suite 100\nSan Francisco, CA 94105");
-  const [companyDescription, setCompanyDescription] = useState("Leading provider of cloud infrastructure and cybersecurity solutions for government agencies. Specialized in modernization pr and digital transformation.");
-  const [founded, setFounded] = useState("2010");
-  const [numberOfEmployees, setNumberOfEmployees] = useState("150");
-  const [certifications, setCertifications] = useState(["WOSB", "SDVOSB", "8(a)"]);
-  const [naicsCodes, setNaicsCodes] = useState(["541512", "541519", "541330"]);
+  const { data: session } = useSession();
+  const { addToast } = useToast();
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
+
+  const [companyName, setCompanyName] = useState("");
+  const [dunsNumber, setDunsNumber] = useState("");
+  const [cageCode, setCageCode] = useState("");
+  const [ueiNumber, setUeiNumber] = useState("");
+  const [businessAddress, setBusinessAddress] = useState("");
+  const [companyDescription, setCompanyDescription] = useState("");
+  const [founded, setFounded] = useState("");
+  const [numberOfEmployees, setNumberOfEmployees] = useState("");
+  const [certifications, setCertifications] = useState<string[]>([]);
+  const [naicsCodes, setNaicsCodes] = useState<string[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!session?.accessToken) return;
+      try {
+        const resp = await fetch(`${apiBase}/company-profile`, {
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.accessToken as string}` },
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const p = (data?.profile ?? {}) as Record<string, unknown>;
+        if (typeof p.companyName === "string") setCompanyName(p.companyName);
+        if (typeof p.dunsNumber === "string") setDunsNumber(p.dunsNumber);
+        if (typeof p.cageCode === "string") setCageCode(p.cageCode);
+        if (typeof p.ueiNumber === "string") setUeiNumber(p.ueiNumber);
+        if (typeof p.businessAddress === "string") setBusinessAddress(p.businessAddress);
+        if (typeof p.description === "string") setCompanyDescription(p.description);
+        if (typeof p.founded === "string") setFounded(p.founded);
+        if (typeof p.numberOfEmployees === "number") setNumberOfEmployees(String(p.numberOfEmployees));
+        if (Array.isArray(p.certifications)) setCertifications(p.certifications as string[]);
+        if (Array.isArray(p.naicsCodes)) setNaicsCodes(p.naicsCodes as string[]);
+        if (typeof p.logoUrl === "string") setLogoUrl(p.logoUrl);
+      } catch (e) {
+        addToast({ title: "Failed to load profile", variant: "error" });
+      }
+    };
+    void loadProfile();
+  }, [session?.accessToken, apiBase, addToast]);
 
   const handleRemoveCertification = (cert: string) => {
     setCertifications(certifications.filter((c) => c !== cert));
@@ -42,9 +79,52 @@ export default function CompanyProfilePage() {
     }
   };
 
-  const handleSave = () => {
-    // TODO: Implement save functionality
-    console.log("Saving company profile...");
+  const handleSave = async () => {
+    if (!session?.accessToken) return;
+    try {
+      const resp = await fetch(`${apiBase}/company-profile`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.accessToken as string}` },
+        body: JSON.stringify({
+          companyName,
+          dunsNumber,
+          cageCode,
+          ueiNumber,
+          businessAddress,
+          description: companyDescription,
+          founded,
+          numberOfEmployees: Number(numberOfEmployees) || 0,
+          certifications,
+          naicsCodes,
+        }),
+      });
+      if (resp.ok) addToast({ title: "Profile saved", variant: "success" });
+      else addToast({ title: "Save failed", description: await resp.text(), variant: "error" });
+    } catch (e) {
+      addToast({ title: "Network error", variant: "error" });
+    }
+  };
+
+  const handleUploadLogo = async (file: File) => {
+    if (!session?.accessToken) return;
+    try {
+      const form = new FormData();
+      form.append("logo", file);
+      const resp = await fetch(`${apiBase}/company-profile/logo`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.accessToken as string}` },
+        body: form,
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setLogoUrl(data.logoUrl as string);
+        addToast({ title: "Logo uploaded", variant: "success" });
+      } else {
+        addToast({ title: "Upload failed", description: await resp.text(), variant: "error" });
+      }
+    } catch (e) {
+      addToast({ title: "Network error", variant: "error" });
+    }
   };
 
   return (
@@ -72,13 +152,29 @@ export default function CompanyProfilePage() {
           </CardHeader>
           <CardContent className="py-5">
             <div className="flex items-center gap-6">
-              <div className="flex items-center justify-center w-48 h-48 border-2 border-dashed border-muted-foreground/30 rounded-lg bg-muted/20">
-                <FileText className="w-12 h-12 text-muted-foreground" />
+              <div className="flex items-center justify-center w-48 h-48 border-2 border-dashed border-muted-foreground/30 rounded-lg bg-muted/20 overflow-hidden">
+                {logoUrl ? (
+                  <Image src={logoUrl} alt="Company Logo" className="object-contain w-full h-full" />
+                ) : (
+                  <FileText className="w-12 h-12 text-muted-foreground" />
+                )}
               </div>
-              <Button className="gap-2">
-                <Upload className="w-4 h-4" />
-                Upload Logo
-              </Button>
+              <div className="flex items-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void handleUploadLogo(f);
+                  }}
+                />
+                <Button className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="w-4 h-4" />
+                  Upload Logo
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
