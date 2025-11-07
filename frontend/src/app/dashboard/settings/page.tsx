@@ -330,7 +330,18 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-foreground">
                   Sidebar Display
                 </label>
-                <Select value={sidebarDisplay} onValueChange={setSidebarDisplay}>
+                <Select
+                  value={sidebarDisplay}
+                  onValueChange={(value) => {
+                    setSidebarDisplay(value);
+                    // Immediately update the sidebar when value changes
+                    window.dispatchEvent(
+                      new CustomEvent("sidebar-display-changed", {
+                        detail: { sidebarDisplay: value },
+                      })
+                    );
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select display" />
                   </SelectTrigger>

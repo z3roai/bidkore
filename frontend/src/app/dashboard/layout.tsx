@@ -34,6 +34,25 @@ export default function DashboardLayout({
     void loadSidebarSetting()
   }, [session?.accessToken])
 
+  // Listen for immediate sidebar display changes from settings page
+  useEffect(() => {
+    const handleSidebarDisplayChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ sidebarDisplay: string }>
+      const display = customEvent.detail?.sidebarDisplay
+      if (display === "Collapsed") {
+        setIsCollapsed(true)
+      } else if (display === "Expanded") {
+        setIsCollapsed(false)
+      }
+      // if Auto, leave as default
+    }
+
+    window.addEventListener("sidebar-display-changed", handleSidebarDisplayChange)
+    return () => {
+      window.removeEventListener("sidebar-display-changed", handleSidebarDisplayChange)
+    }
+  }, [])
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
