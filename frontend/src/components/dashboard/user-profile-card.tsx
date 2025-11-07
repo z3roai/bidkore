@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -48,6 +48,23 @@ export default function UserProfileCard({
   const displayName = session?.user?.name || name;
   const displayEmail = session?.user?.email || email;
   const displayAvatar = session?.user?.image || avatar;
+  const [liveAvatar, setLiveAvatar] = useState<string | undefined>(displayAvatar);
+
+  useEffect(() => {
+    setLiveAvatar(displayAvatar);
+  }, [displayAvatar]);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ url?: string }>).detail;
+      if (detail?.url && typeof detail.url === "string") {
+        setImageError(false);
+        setLiveAvatar(detail.url);
+      }
+    };
+    window.addEventListener("avatar-updated", handler as EventListener);
+    return () => window.removeEventListener("avatar-updated", handler as EventListener);
+  }, []);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -85,9 +102,9 @@ export default function UserProfileCard({
               )}
             >
               <div className="relative w-10 h-10 rounded-full bg-foreground flex items-center justify-center text-background font-semibold overflow-hidden hover:ring-2 hover:ring-ring transition-all cursor-pointer">
-                {displayAvatar && !imageError ? (
+                {liveAvatar && !imageError ? (
                   <Image
-                    src={displayAvatar}
+                    src={liveAvatar}
                     alt={displayName}
                     width={40}
                     height={40}
@@ -113,7 +130,7 @@ export default function UserProfileCard({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/settings" className="flex items-center">
+              <Link href="/dashboard/profile" className="flex items-center">
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </Link>
@@ -182,9 +199,9 @@ export default function UserProfileCard({
             )}
           >
             <div className="relative w-10 h-10 rounded-full bg-background flex items-center justify-center text-foreground font-semibold overflow-hidden">
-              {displayAvatar && !imageError ? (
+              {liveAvatar && !imageError ? (
                 <Image
-                  src={displayAvatar}
+                  src={liveAvatar}
                   alt={displayName}
                   width={40}
                   height={40}
@@ -217,7 +234,7 @@ export default function UserProfileCard({
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href="/dashboard/settings" className="flex items-center">
+            <Link href="/dashboard/profile" className="flex items-center">
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </Link>

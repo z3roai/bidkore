@@ -9,7 +9,18 @@ import { Upload, X, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "next-auth/react";
 import { useToast } from "@/components/ui/toast";
-import Image from "next/image";
+import { Switch } from "@/components/ui/switch";
+import NextImage from "next/image";
+import ImageCropperDialog from "@/components/image/ImageCropperDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import MainButton from "@/components/main-button";
 
 export default function CompanyProfilePage() {
   const { data: session } = useSession();
@@ -28,6 +39,10 @@ export default function CompanyProfilePage() {
   const [naicsCodes, setNaicsCodes] = useState<string[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+const [isEditing, setIsEditing] = useState(false);
+
+  const [isCropOpen, setIsCropOpen] = useState(false);
+  const [cropObjectUrl, setCropObjectUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -98,12 +113,40 @@ export default function CompanyProfilePage() {
           naicsCodes,
         }),
       });
-      if (resp.ok) addToast({ title: "Profile saved", variant: "success" });
+      if (resp.ok) {
+        addToast({ title: "Profile saved", variant: "success" });
+        setIsEditing(false);
+      }
       else addToast({ title: "Save failed", description: await resp.text(), variant: "error" });
     } catch (e) {
       addToast({ title: "Network error", variant: "error" });
     }
   };
+
+const handleCancel = async () => {
+  if (!session?.accessToken) { setIsEditing(false); return; }
+  try {
+    const resp = await fetch(`${apiBase}/company-profile`, {
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.accessToken as string}` },
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      const p = (data?.profile ?? {}) as Record<string, unknown>;
+      setCompanyName(typeof p.companyName === "string" ? p.companyName : "");
+      setDunsNumber(typeof p.dunsNumber === "string" ? p.dunsNumber : "");
+      setCageCode(typeof p.cageCode === "string" ? p.cageCode : "");
+      setUeiNumber(typeof p.ueiNumber === "string" ? p.ueiNumber : "");
+      setBusinessAddress(typeof p.businessAddress === "string" ? p.businessAddress : "");
+      setCompanyDescription(typeof p.description === "string" ? p.description : "");
+      setFounded(typeof p.founded === "string" ? p.founded : "");
+      setNumberOfEmployees(typeof p.numberOfEmployees === "number" ? String(p.numberOfEmployees) : "");
+      setCertifications(Array.isArray(p.certifications) ? (p.certifications as string[]) : []);
+      setNaicsCodes(Array.isArray(p.naicsCodes) ? (p.naicsCodes as string[]) : []);
+      setLogoUrl(typeof p.logoUrl === "string" ? p.logoUrl : undefined);
+    }
+  } catch {}
+  setIsEditing(false);
+};
 
   const handleUploadLogo = async (file: File) => {
     if (!session?.accessToken) return;
@@ -127,6 +170,18 @@ export default function CompanyProfilePage() {
     }
   };
 
+  const openCropperForFile = (file: File) => {
+    const url = URL.createObjectURL(file);
+    setCropObjectUrl(url);
+    setIsCropOpen(true);
+  };
+
+  const onPickFile = (f: File) => {
+    openCropperForFile(f);
+  };
+
+  // Cropping is handled by shared ImageCropperDialog
+
   return (
     <div className="bg-background h-full flex flex-col p-6">
       {/* Main Content Container with White Background */}
@@ -138,11 +193,23 @@ export default function CompanyProfilePage() {
         />
 
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">BidKore Company</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your company information used in proposals and documents.
-          </p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground">BidKore Company</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your company information used in proposals and documents.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isEditing ? (
+              <Button variant="secondary" onClick={() => setIsEditing(true)}>Edit</Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+                <MainButton onClick={handleSave}>Save Changes</MainButton>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Company Logo Section */}
@@ -152,9 +219,15 @@ export default function CompanyProfilePage() {
           </CardHeader>
           <CardContent className="py-5">
             <div className="flex items-center gap-6">
-              <div className="flex items-center justify-center w-48 h-48 border-2 border-dashed border-muted-foreground/30 rounded-lg bg-muted/20 overflow-hidden">
+              <div className="relative flex items-center justify-center w-48 h-48 border-2 border-dashed border-muted-foreground/30 rounded-lg bg-muted/20 overflow-hidden">
                 {logoUrl ? (
-                  <Image src={logoUrl} alt="Company Logo" className="object-contain w-full h-full" />
+                  <NextImage
+                    src={logoUrl.startsWith("http") ? logoUrl : `${apiBase.replace(/\/api$/, "")}${logoUrl}`}
+                    alt="Company Logo"
+                    fill
+                    sizes="192px"
+                    className="object-contain"
+                  />
                 ) : (
                   <FileText className="w-12 h-12 text-muted-foreground" />
                 )}
@@ -167,10 +240,10 @@ export default function CompanyProfilePage() {
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
-                    if (f) void handleUploadLogo(f);
+                    if (f) onPickFile(f);
                   }}
                 />
-                <Button className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                <Button className="gap-2" onClick={() => fileInputRef.current?.click()} disabled={!isEditing}>
                   <Upload className="w-4 h-4" />
                   Upload Logo
                 </Button>
@@ -191,6 +264,7 @@ export default function CompanyProfilePage() {
                 <Input
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
+                  disabled={!isEditing}
                 />
               </div>
               <div>
@@ -198,6 +272,7 @@ export default function CompanyProfilePage() {
                 <Input
                   value={dunsNumber}
                   onChange={(e) => setDunsNumber(e.target.value)}
+                  disabled={!isEditing}
                 />
               </div>
               <div>
@@ -205,6 +280,7 @@ export default function CompanyProfilePage() {
                 <Input
                   value={cageCode}
                   onChange={(e) => setCageCode(e.target.value)}
+                  disabled={!isEditing}
                 />
               </div>
               <div>
@@ -212,6 +288,7 @@ export default function CompanyProfilePage() {
                 <Input
                   value={ueiNumber}
                   onChange={(e) => setUeiNumber(e.target.value)}
+                  disabled={!isEditing}
                 />
               </div>
               <div className="md:col-span-2">
@@ -227,6 +304,7 @@ export default function CompanyProfilePage() {
                     "disabled:cursor-not-allowed disabled:opacity-50",
                     "resize-y"
                   )}
+                  disabled={!isEditing}
                 />
               </div>
             </div>
@@ -253,6 +331,7 @@ export default function CompanyProfilePage() {
                     "disabled:cursor-not-allowed disabled:opacity-50",
                     "resize-y"
                   )}
+                  disabled={!isEditing}
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -261,6 +340,7 @@ export default function CompanyProfilePage() {
                   <Input
                     value={founded}
                     onChange={(e) => setFounded(e.target.value)}
+                    disabled={!isEditing}
                   />
                 </div>
                 <div>
@@ -268,6 +348,7 @@ export default function CompanyProfilePage() {
                   <Input
                     value={numberOfEmployees}
                     onChange={(e) => setNumberOfEmployees(e.target.value)}
+                    disabled={!isEditing}
                   />
                 </div>
               </div>
@@ -292,6 +373,7 @@ export default function CompanyProfilePage() {
                     type="button"
                     onClick={() => handleRemoveCertification(cert)}
                     className="hover:bg-background/20 rounded-full p-0.5 transition-colors"
+                    disabled={!isEditing}
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -302,6 +384,7 @@ export default function CompanyProfilePage() {
               variant="outline"
               onClick={handleAddCertification}
               className="bg-muted hover:bg-muted/80"
+              disabled={!isEditing}
             >
               + Add Certification
             </Button>
@@ -325,6 +408,7 @@ export default function CompanyProfilePage() {
                     type="button"
                     onClick={() => handleRemoveNaicsCode(code)}
                     className="hover:bg-background/20 rounded-full p-0.5 transition-colors"
+                    disabled={!isEditing}
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -336,6 +420,7 @@ export default function CompanyProfilePage() {
                 variant="outline"
                 onClick={handleAddNaicsCode}
                 className="bg-muted hover:bg-muted/80"
+                disabled={!isEditing}
               >
                 + Add NAICS Code
               </Button>
@@ -346,11 +431,34 @@ export default function CompanyProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-3 mt-6">
-          <Button variant="outline">Cancel</Button>
-          <Button onClick={handleSave}>Save Changes</Button>
-        </div>
+        {/* Action Buttons (secondary location) */}
+        {isEditing && (
+          <div className="flex justify-end gap-3 mt-6">
+            <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+            <MainButton onClick={handleSave}>Save Changes</MainButton>
+          </div>
+        )}
+
+        <ImageCropperDialog
+          open={isCropOpen}
+          onOpenChange={(o) => {
+            setIsCropOpen(o);
+            if (!o && cropObjectUrl) {
+              URL.revokeObjectURL(cropObjectUrl);
+              setCropObjectUrl(null);
+            }
+          }}
+          objectUrl={cropObjectUrl}
+          title="Crop Logo"
+          description="Select a square area to use as your logo."
+          initialOutputWidth={512}
+          initialOutputHeight={512}
+          lockAspectDefault={true}
+          outputMimeType="image/png"
+          onCrop={async (file) => {
+            await handleUploadLogo(file);
+          }}
+        />
       </div>
     </div>
   );

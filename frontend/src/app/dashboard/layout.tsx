@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Sidebar from "@/components/dashboard/sidebar"
+import { useSession } from "next-auth/react"
 
 export default function DashboardLayout({
   children,
@@ -9,6 +10,29 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const { data: session } = useSession()
+
+  useEffect(() => {
+    const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/+$/, "")
+    const loadSidebarSetting = async () => {
+      try {
+        if (!session?.accessToken) return
+        const resp = await fetch(`${apiBase}/users/settings`, {
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.accessToken as string}` },
+        })
+        if (!resp.ok) return
+        const data = await resp.json()
+        const s = (data?.settings ?? {}) as Record<string, unknown>
+        const display = typeof s.sidebarDisplay === "string" ? s.sidebarDisplay : undefined
+        if (display === "Collapsed") setIsCollapsed(true)
+        if (display === "Expanded") setIsCollapsed(false)
+        // if Auto, leave as default
+      } catch {
+        // ignore
+      }
+    }
+    void loadSidebarSetting()
+  }, [session?.accessToken])
 
   return (
     <div className="flex h-screen bg-background">
