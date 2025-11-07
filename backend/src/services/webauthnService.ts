@@ -6,6 +6,7 @@ import {
 	verifyAuthenticationResponse,
 	verifyRegistrationResponse,
 } from "@simplewebauthn/server";
+import { isoUint8Array } from "@simplewebauthn/server/helpers";
 import type {
 	AuthenticationResponseJSON,
 	AuthenticatorTransportFuture,
@@ -19,6 +20,10 @@ import WebAuthnCredentialModel from "@/models/WebAuthnCredential";
 import loggingService from "@/services/loggingService";
 
 const CHALLENGE_TTL_SECONDS = 10 * 60;
+
+// In-memory fallback stores when Redis is unavailable
+const memRegisterChallenges = new Map<string, { challenge: string; expiresAt: number }>();
+const memLoginChallenges = new Map<string, { challenge: string; expiresAt: number }>();
 
 const getRpInfo = (
 	originOverride?: string
@@ -58,10 +63,10 @@ export default {
 		const existingCredentials = await WebAuthnCredentialModel.findByUserId(
 			user.id
 		);
-		const excludeCredentials = existingCredentials.map(cred => ({
-			id: Buffer.from(cred.credentialId).toString("base64url"),
-			type: "public-key" as const,
-		}));
+        const excludeCredentials = existingCredentials.map(cred => ({
+            id: Buffer.from(cred.credentialId).toString("base64url"),
+            type: "public-key" as const,
+        }));
 
 		loggingService.debug("WebAuthn generateRegistrationOptions - inputs", {
 			userId: user.id,
@@ -71,13 +76,12 @@ export default {
 			originOverride,
 			excludeCount: excludeCredentials.length,
 		});
-
-		let options: Awaited<ReturnType<typeof generateRegistrationOptions>>;
+        let options: Awaited<ReturnType<typeof generateRegistrationOptions>>;
 		try {
 			options = await generateRegistrationOptions({
 				rpName,
 				rpID,
-				userID: Buffer.from(String(user.id)),
+				userID: isoUint8Array.fromUTF8String(String(user.id)),
 				userName: user.email,
 				attestationType: "none",
 				excludeCredentials,
@@ -97,11 +101,17 @@ export default {
 			throw err;
 		}
 
-		await redisClient.setEx(
-			getRegisterChallengeKey(user.id),
-			CHALLENGE_TTL_SECONDS,
-			options.challenge
-		);
+        try {
+            await redisClient.setEx(
+                getRegisterChallengeKey(user.id),
+                CHALLENGE_TTL_SECONDS,
+                options.challenge
+            );
+        } catch {
+            // Fallback to memory
+            memRegisterChallenges.set(user.id, { challenge: options.challenge, expiresAt: Date.now() + CHALLENGE_TTL_SECONDS * 1000 });
+            loggingService.warn("Redis unavailable, using in-memory register challenge store");
+        }
 
 		return { options };
 	},
@@ -112,9 +122,18 @@ export default {
 		originOverride?: string
 	): Promise<{ verified: true }> {
 		const { rpID, origin } = getRpInfo(originOverride);
-		const expectedChallenge = await redisClient.get(
-			getRegisterChallengeKey(user.id)
-		);
+        let expectedChallenge: string | null = null;
+        try {
+            expectedChallenge = await redisClient.get(
+                getRegisterChallengeKey(user.id)
+            );
+        } catch {
+            // ignore
+        }
+        if (!expectedChallenge) {
+            const mem = memRegisterChallenges.get(user.id);
+            if (mem && mem.expiresAt > Date.now()) expectedChallenge = mem.challenge;
+        }
 		if (!expectedChallenge) {
 			throw new Error("Registration challenge not found or expired");
 		}
@@ -155,7 +174,12 @@ export default {
 			aaguid,
 		});
 
-		await redisClient.del(getRegisterChallengeKey(user.id));
+        try {
+            await redisClient.del(getRegisterChallengeKey(user.id));
+        } catch {
+            // ignore
+        }
+        memRegisterChallenges.delete(user.id);
 
 		return { verified: true } as const;
 	},
@@ -165,13 +189,13 @@ export default {
 		originOverride?: string
 	): Promise<AuthenticationOptionsResult> {
 		const { rpID } = getRpInfo(originOverride);
-		const credentials = await WebAuthnCredentialModel.findByUserId(user.id);
-		const allowCredentials = credentials.map(cred => ({
-			id: Buffer.from(cred.credentialId).toString("base64url"),
-			transports: Array.isArray(cred.transports)
-				? (cred.transports as AuthenticatorTransportFuture[])
-				: [],
-		}));
+        const credentials = await WebAuthnCredentialModel.findByUserId(user.id);
+        const allowCredentials = credentials.map(cred => ({
+            id: Buffer.from(cred.credentialId).toString("base64url"),
+            transports: Array.isArray(cred.transports)
+                ? (cred.transports as AuthenticatorTransportFuture[])
+                : [],
+        }));
 
 		loggingService.debug("WebAuthn generateAuthenticationOptions - inputs", {
 			userId: user.id,
@@ -198,11 +222,16 @@ export default {
 			throw err;
 		}
 
-		await redisClient.setEx(
-			getLoginChallengeKey(user.id),
-			CHALLENGE_TTL_SECONDS,
-			options.challenge
-		);
+        try {
+            await redisClient.setEx(
+                getLoginChallengeKey(user.id),
+                CHALLENGE_TTL_SECONDS,
+                options.challenge
+            );
+        } catch {
+            memLoginChallenges.set(user.id, { challenge: options.challenge, expiresAt: Date.now() + CHALLENGE_TTL_SECONDS * 1000 });
+            loggingService.warn("Redis unavailable, using in-memory login challenge store");
+        }
 
 		return { options };
 	},
@@ -213,9 +242,18 @@ export default {
 		originOverride?: string
 	): Promise<{ verified: true }> {
 		const { rpID, origin } = getRpInfo(originOverride);
-		const expectedChallenge = await redisClient.get(
-			getLoginChallengeKey(user.id)
-		);
+        let expectedChallenge: string | null = null;
+        try {
+            expectedChallenge = await redisClient.get(
+                getLoginChallengeKey(user.id)
+            );
+        } catch {
+            // ignore
+        }
+        if (!expectedChallenge) {
+            const mem = memLoginChallenges.get(user.id);
+            if (mem && mem.expiresAt > Date.now()) expectedChallenge = mem.challenge;
+        }
 		if (!expectedChallenge) {
 			throw new Error("Authentication challenge not found or expired");
 		}
@@ -261,7 +299,12 @@ export default {
 				Buffer.from(matchedCredential.credentialId),
 				newCounter
 			);
-			await redisClient.del(getLoginChallengeKey(user.id));
+            try {
+                await redisClient.del(getLoginChallengeKey(user.id));
+            } catch {
+                // ignore
+            }
+            memLoginChallenges.delete(user.id);
 			return { verified: true } as const;
 		} catch (error) {
 			loggingService.error("WebAuthn authentication error:", error);
