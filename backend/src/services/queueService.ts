@@ -204,6 +204,9 @@ class QueueService {
       systemLoad: dynamicConfig.concurrencyMultiplier,
     });
 
+    if (!attachmentDownloadQueue) {
+      throw new Error("Attachment download queue not initialized");
+    }
     return attachmentDownloadQueue.add(
       "download-attachment",
       enhancedJobData,
@@ -241,6 +244,9 @@ class QueueService {
       opportunityId: jobData.opportunityId,
     });
 
+    if (!notificationQueue) {
+      throw new Error("Notification queue not initialized");
+    }
     return notificationQueue.add(
       "send-notification",
       enhancedJobData,
@@ -280,6 +286,9 @@ class QueueService {
       subject: jobData.subject,
     });
 
+    if (!emailQueue) {
+      throw new Error("Email queue not initialized");
+    }
     return emailQueue.add("send-email", enhancedJobData, jobOptions);
   }
 
@@ -311,6 +320,9 @@ class QueueService {
       filterId: jobData.filterId,
     });
 
+    if (!filterPollingQueue) {
+      throw new Error("Filter polling queue not initialized");
+    }
     return filterPollingQueue.add("poll-filter", enhancedJobData, jobOptions);
   }
 
@@ -350,40 +362,48 @@ class QueueService {
         attachmentActive,
         attachmentCompleted,
         attachmentFailed,
-      ] = await Promise.all([
-        attachmentDownloadQueue.getWaiting(),
-        attachmentDownloadQueue.getActive(),
-        attachmentDownloadQueue.getCompleted(),
-        attachmentDownloadQueue.getFailed(),
-      ]);
+      ] = attachmentDownloadQueue
+        ? await Promise.all([
+            attachmentDownloadQueue.getWaiting(),
+            attachmentDownloadQueue.getActive(),
+            attachmentDownloadQueue.getCompleted(),
+            attachmentDownloadQueue.getFailed(),
+          ])
+        : [[], [], [], []];
 
       const [
         notificationWaiting,
         notificationActive,
         notificationCompleted,
         notificationFailed,
-      ] = await Promise.all([
-        notificationQueue.getWaiting(),
-        notificationQueue.getActive(),
-        notificationQueue.getCompleted(),
-        notificationQueue.getFailed(),
-      ]);
+      ] = notificationQueue
+        ? await Promise.all([
+            notificationQueue.getWaiting(),
+            notificationQueue.getActive(),
+            notificationQueue.getCompleted(),
+            notificationQueue.getFailed(),
+          ])
+        : [[], [], [], []];
 
       const [emailWaiting, emailActive, emailCompleted, emailFailed] =
-        await Promise.all([
-          emailQueue.getWaiting(),
-          emailQueue.getActive(),
-          emailQueue.getCompleted(),
-          emailQueue.getFailed(),
-        ]);
+        emailQueue
+          ? await Promise.all([
+              emailQueue.getWaiting(),
+              emailQueue.getActive(),
+              emailQueue.getCompleted(),
+              emailQueue.getFailed(),
+            ])
+          : [[], [], [], []];
 
       const [filterWaiting, filterActive, filterCompleted, filterFailed] =
-        await Promise.all([
-          filterPollingQueue.getWaiting(),
-          filterPollingQueue.getActive(),
-          filterPollingQueue.getCompleted(),
-          filterPollingQueue.getFailed(),
-        ]);
+        filterPollingQueue
+          ? await Promise.all([
+              filterPollingQueue.getWaiting(),
+              filterPollingQueue.getActive(),
+              filterPollingQueue.getCompleted(),
+              filterPollingQueue.getFailed(),
+            ])
+          : [[], [], [], []];
 
       // Calculate priority distribution
       const allJobs = [
