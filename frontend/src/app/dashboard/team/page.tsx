@@ -1,8 +1,9 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { Users, MoreHorizontal, Search, Filter as FilterIcon, Check, X } from "lucide-react"
+import { Users, MoreHorizontal, Search, Check, X } from "lucide-react"
 import Breadcrumb from "@/components/dashboard/breadcrumb"
+import TeamFilter from "@/components/dashboard/team-filter"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -351,6 +352,11 @@ export default function TeamPage() {
 		})
 	}, [members, roleFilter, statusFilter, search])
 
+	const handleClearFilters = () => {
+		setRoleFilter("all")
+		setStatusFilter("all")
+	}
+
 	return (
 		<div className="bg-background min-h-full p-6">
 			<div className="bg-white dark:bg-card rounded-lg p-6 shadow-sm">
@@ -392,9 +398,13 @@ export default function TeamPage() {
 										onChange={(e) => setSearch(e.target.value)}
 									/>
 								</div>
-								<Button variant="outline" className="gap-2">
-									<FilterIcon className="h-4 w-4" /> Filter
-								</Button>
+								<TeamFilter
+									roleFilter={roleFilter}
+									statusFilter={statusFilter}
+									onRoleFilterChange={setRoleFilter}
+									onStatusFilterChange={setStatusFilter}
+									onClearFilters={handleClearFilters}
+								/>
 							</div>
 							<div className="flex items-center gap-2">
 								<Select value={roleFilter} onValueChange={setRoleFilter}>
