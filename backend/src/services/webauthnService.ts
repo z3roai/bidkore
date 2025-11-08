@@ -102,7 +102,7 @@ export default {
 		}
 
         try {
-            await redisClient.setEx(
+            await redisClient.setex(
                 getRegisterChallengeKey(user.id),
                 CHALLENGE_TTL_SECONDS,
                 options.challenge
@@ -223,7 +223,7 @@ export default {
 		}
 
         try {
-            await redisClient.setEx(
+            await redisClient.setex(
                 getLoginChallengeKey(user.id),
                 CHALLENGE_TTL_SECONDS,
                 options.challenge

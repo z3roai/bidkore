@@ -34,6 +34,7 @@ import stripeRoutes, { stripeWebhookRouter } from "@/routes/stripe";
 import subscriptionsRoutes from "@/routes/subscriptions";
 import teamsRoutes, { setWebSocketService } from "@/routes/teams";
 import companyProfileRoutes from "@/routes/companyProfile";
+import proposalsRoutes from "@/routes/proposals";
 import totpRoutes from "@/routes/totp";
 import userRoutes from "@/routes/user";
 import webauthnRoutes from "@/routes/webauthn";
@@ -123,6 +124,7 @@ app.use("/api/notifications", notificationsRoutes);
 app.use("/api/logs", logsRoutes);
 app.use("/api/dm-chat", dmChatRoutes);
 app.use("/api/company-profile", companyProfileRoutes);
+app.use("/api/proposals", proposalsRoutes);
 
 app.use(notFoundHandler);
 

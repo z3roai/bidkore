@@ -15,7 +15,7 @@ export const connectRedis = async (): Promise<void> => {
 			port: config.redis.port,
 			password: config.redis.password || undefined,
 			tls: config.redis.tls ? {} : undefined,
-		华盛retryStrategy: (times: number) => {
+			retryStrategy: (times: number) => {
 				const delay = Math.min(times * 50, 2000);
 				return delay;
 			},

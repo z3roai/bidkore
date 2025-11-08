@@ -57,9 +57,7 @@ async function storeOAuthState(
     mode: data.mode,
   });
 
-  await redisClient.set(key, serialized, {
-    EX: 20 * 60,
-  });
+  await redisClient.set(key, serialized, "EX", 20 * 60);
 
   loggingService.info("OAuth state stored successfully", { key });
 }
@@ -345,7 +343,7 @@ router.get(
       const testKey = "test:redis:connection";
       const testValue = { timestamp: Date.now(), test: "redis connection" };
 
-      await redisClient.set(testKey, JSON.stringify(testValue), { EX: 60 });
+      await redisClient.set(testKey, JSON.stringify(testValue), "EX", 60);
       const retrieved = await redisClient.get(testKey);
 
       if (retrieved) {

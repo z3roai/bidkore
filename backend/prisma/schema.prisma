@@ -62,6 +62,7 @@ model User {
   webauthnCredentials   WebAuthnCredential[]
   teams                 Team[]                @relation("UserTeams")
   companyProfile        CompanyProfile?
+  proposals             Proposal[]
 
   @@map("users")
 }
@@ -206,6 +207,7 @@ model Opportunity {
   updatedAt                 DateTime              @updatedAt @map("updated_at")
   archivedByUsers           ArchivedOpportunity[]
   filterOpportunities       FilterOpportunity[]
+  proposals                 Proposal[]
 
   @@map("opportunities")
 }
@@ -496,6 +498,26 @@ model CompanyProfile {
   @@map("company_profiles")
 }
 
+model Proposal {
+  id                String         @id @default(uuid()) @db.Uuid
+  userId            String         @map("user_id") @db.Uuid
+  opportunityId     String?        @map("opportunity_id") @db.Uuid
+  title             String
+  sections          Json
+  status            ProposalStatus @default(DRAFT)
+  complianceScore   Int?           @map("compliance_score")
+  aiRecommendations Json?          @map("ai_recommendations")
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+  submittedAt       DateTime?      @map("submitted_at")
+  user              User           @relation(fields: [userId], references: [id])
+  opportunity       Opportunity?   @relation(fields: [opportunityId], references: [id])
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@map("proposals")
+}
+
 model SearchHistory {
   id             String     @id @default(uuid()) @db.Uuid
   userId         String     @map("user_id") @db.Uuid
@@ -586,4 +608,12 @@ enum SearchType {
   ADVANCED_FILTERS
   SAVED_FILTER
   NATURAL_LANGUAGE
+}
+
+enum ProposalStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
 }
