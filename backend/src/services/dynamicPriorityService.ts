@@ -78,10 +78,21 @@ class DynamicPriorityService {
    * Get metrics for a specific queue
    */
   private async getQueueMetrics(
-    queue: Queue,
+    queue: Queue | null,
     queueName: string
   ): Promise<QueueMetrics> {
     try {
+      if (!queue) {
+        return {
+          waiting: 0,
+          active: 0,
+          completed: 0,
+          failed: 0,
+          avgProcessingTime: 0,
+          throughput: 0,
+        };
+      }
+
       const [waiting, active, completed, failed] = await Promise.all([
         queue.getWaiting(),
         queue.getCompleted(),

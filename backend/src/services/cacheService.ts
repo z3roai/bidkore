@@ -60,7 +60,7 @@ class CacheService {
 			const serializedValue =
 				options.serialize !== false ? JSON.stringify(value) : value;
 
-			await redisClient.setEx(fullKey, ttl, serializedValue as string);
+			await redisClient.setex(fullKey, ttl, serializedValue as string);
 			loggingService.debug(`Cache set for key: ${fullKey} with TTL: ${ttl}s`);
 			return true;
 		} catch (error) {

@@ -629,7 +629,7 @@ class DataEnhancementService {
 				return;
 			}
 
-			await redisClient.setEx(cacheKey, ttl, JSON.stringify(data));
+			await redisClient.setex(cacheKey, ttl, JSON.stringify(data));
 		} catch (error: unknown) {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
