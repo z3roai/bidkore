@@ -440,3 +440,124 @@ export const pipelineCards: PipelineCard[] = [
     tcv: 6.65,
   },
 ];
+
+// AI Search Opportunities mock data
+export interface AISearchOpportunity {
+  id: string | null;
+  samId: string;
+  noticeId: string;
+  title: string;
+  description: string;
+  agency: string;
+  naicsCode?: string;
+  classificationCode?: string;
+  postedDate?: string;
+  responseDeadline?: string;
+  setAside?: string;
+  location: string;
+  estimatedValue?: number | null;
+  uiLink?: string;
+  score?: number;
+  whyRanked?: string[];
+  probabilityOfSuccess?: number;
+  bidability?: string;
+  winRate?: number;
+  assistantAnalysis?: string[];
+  assistantAdvice?: string;
+}
+
+export const mockAISearchOpportunities: AISearchOpportunity[] = [
+  {
+    id: null,
+    samId: "HT940825PE005",
+    noticeId: "HT940825PE005",
+    title: "Cloud Infrastructure Modernization",
+    description:
+      "The Department of Defense seeks qualified contractors to provide comprehensive cloud infrastructure modernization services. This project involves migrating legacy systems to a secure, scalable cloud environment while ensuring compliance with federal security standards and regulations. The Contractor shall provide cloud infrastructure modernization services to the 47th Medical Group (47 MDG), located at Laughlin Air Force Base (LAFB) in accordance with the Statement of Work (SOW), all contract requirements, and compliance with federal, state, and local regulations. The scope includes assessment of current infrastructure, development of migration strategies, implementation of cloud solutions, and ongoing support and maintenance.",
+    agency: "Department of Defense (DoD) / DEPT OF THE AIR FORCE",
+    naicsCode: "518210",
+    classificationCode: "D209",
+    postedDate: new Date("2025-04-01").toISOString(),
+    responseDeadline: new Date("2025-05-15").toISOString(),
+    setAside: "RFP",
+    location: "Laughlin Air Force Base, TX",
+    estimatedValue: 2500000,
+    uiLink: "https://sam.gov/opp/HT940825PE005",
+    score: 0.85,
+    whyRanked: [
+      "Strong match with cloud infrastructure requirements",
+      "Favorable set-aside category",
+    ],
+    probabilityOfSuccess: 72,
+    bidability: "High",
+    winRate: 72,
+    assistantAnalysis: [
+      "Strong alignment with cloud modernization needs",
+      "DoD has consistent spending in this area",
+    ],
+    assistantAdvice:
+      "This opportunity is ideal for small businesses with cloud migration expertise. The DoD is seeking a contractor to modernize their infrastructure with emphasis on security compliance (FedRAMP, NIST 800-53). Key requirements include AWS/Azure experience, DevSecOps capabilities, and prior federal contract experience. The estimated timeline is 18-24 months with potential for extensions.",
+  },
+  {
+    id: null,
+    samId: "DHS940825PE006",
+    noticeId: "DHS940825PE006",
+    title: "Cybersecurity Assessment Services",
+    description:
+      "The Contractor shall provide comprehensive cybersecurity assessment and penetration testing services for critical infrastructure systems in accordance with NIST guidelines and federal security standards.",
+    agency: "Department of Homeland Security / CYBERSECURITY AND INFRASTRUCTURE SECURITY AGENCY",
+    naicsCode: "541512",
+    classificationCode: "R425",
+    postedDate: new Date("2025-04-10").toISOString(),
+    responseDeadline: new Date("2025-04-30").toISOString(),
+    setAside: "RFQ",
+    location: "Washington, DC",
+    estimatedValue: 1800000,
+    uiLink: "https://sam.gov/opp/DHS940825PE006",
+    score: 0.78,
+    whyRanked: [
+      "High demand for cybersecurity services",
+      "CISA is a key agency for security contracts",
+    ],
+    probabilityOfSuccess: 68,
+    bidability: "High",
+    winRate: 68,
+    assistantAnalysis: [
+      "Critical infrastructure focus aligns with current priorities",
+      "NIST compliance is essential",
+    ],
+    assistantAdvice:
+      "Showcase NIST 800-53 expertise • Provide examples of critical infrastructure assessments • Highlight incident response capabilities",
+  },
+  {
+    id: null,
+    samId: "GSA940825PE007",
+    noticeId: "GSA940825PE007",
+    title: "Data Analytics Platform Development",
+    description:
+      "The Contractor shall design, develop, and implement a scalable data analytics platform to support federal agency decision-making processes, including data visualization, reporting, and predictive analytics capabilities.",
+    agency: "GSA / FEDERAL ACQUISITION SERVICE",
+    naicsCode: "541511",
+    classificationCode: "D307",
+    postedDate: new Date("2025-05-01").toISOString(),
+    responseDeadline: new Date("2025-06-10").toISOString(),
+    setAside: "RFP",
+    location: "Washington, DC",
+    estimatedValue: 3200000,
+    uiLink: "https://sam.gov/opp/GSA940825PE007",
+    score: 0.82,
+    whyRanked: [
+      "GSA has strong track record with data analytics projects",
+      "Scalable platform requirement matches your capabilities",
+    ],
+    probabilityOfSuccess: 75,
+    bidability: "High",
+    winRate: 75,
+    assistantAnalysis: [
+      "GSA values innovation in data analytics",
+      "Multi-agency potential increases value",
+    ],
+    assistantAdvice:
+      "Demonstrate scalability with past projects • Include predictive analytics case studies • Show integration with existing federal systems",
+  },
+];
