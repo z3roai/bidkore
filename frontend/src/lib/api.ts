@@ -309,6 +309,186 @@ export async function getPipelineCards(
 }
 
 // ============================================================================
+// Proposals API
+// ============================================================================
+
+export interface ProposalSections {
+  executiveSummary: string;
+  technicalApproach: string;
+  pastPerformance: string;
+  keyPersonnel: string;
+  managementPlan: string;
+}
+
+export interface Proposal {
+  id: string;
+  userId: string;
+  opportunityId?: string;
+  title: string;
+  sections: ProposalSections;
+  status: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "ACCEPTED" | "REJECTED";
+  complianceScore?: number;
+  aiRecommendations?: string[];
+  createdAt: string;
+  updatedAt: string;
+  submittedAt?: string;
+  opportunity?: {
+    id: string;
+    title: string;
+    noticeId: string;
+    fullParentPathName: string | null;
+    responseDeadLine: string | null;
+  };
+}
+
+export interface ProposalsResponse {
+  success: boolean;
+  data: Proposal[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}
+
+export interface GenerateProposalResponse {
+  success: boolean;
+  data: Proposal;
+  message: string;
+}
+
+export async function generateProposal(
+  opportunityId: string,
+): Promise<GenerateProposalResponse> {
+  return fetchFromBackend<GenerateProposalResponse>("/proposals/generate", {
+    method: "POST",
+    body: JSON.stringify({ opportunityId }),
+  });
+}
+
+export async function getProposals(
+  status?: string,
+  limit = 50,
+  offset = 0,
+): Promise<ProposalsResponse> {
+  const params = new URLSearchParams({
+    limit: limit.toString(),
+    offset: offset.toString(),
+  });
+
+  if (status) params.append("status", status);
+
+  return fetchFromBackend<ProposalsResponse>(
+    `/proposals?${params.toString()}`,
+  );
+}
+
+export async function getProposalById(id: string): Promise<Proposal> {
+  const response = await fetchFromBackend<{ success: boolean; data: Proposal }>(
+    `/proposals/${id}`,
+  );
+  return response.data;
+}
+
+export async function updateProposal(
+  id: string,
+  data: {
+    title?: string;
+    sections?: Partial<ProposalSections>;
+    status?: Proposal["status"];
+  },
+): Promise<Proposal> {
+  const response = await fetchFromBackend<{ success: boolean; data: Proposal }>(
+    `/proposals/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    },
+  );
+  return response.data;
+}
+
+export async function deleteProposal(id: string): Promise<void> {
+  await fetchFromBackend<{ success: boolean }>(`/proposals/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function generateProposalSection(
+  id: string,
+  sectionName: keyof ProposalSections,
+  context?: string,
+): Promise<string> {
+  const response = await fetchFromBackend<{
+    success: boolean;
+    data: { section: string };
+  }>(`/proposals/${id}/sections`, {
+    method: "POST",
+    body: JSON.stringify({ sectionName, context }),
+  });
+  return response.data.section;
+}
+
+export async function improveProposalText(
+  id: string,
+  text: string,
+  context?: string,
+): Promise<{
+  improvedText: string;
+  changes: string[];
+  score: number;
+}> {
+  const response = await fetchFromBackend<{
+    success: boolean;
+    data: {
+      improvedText: string;
+      changes: string[];
+      score: number;
+    };
+  }>(`/proposals/${id}/improve`, {
+    method: "POST",
+    body: JSON.stringify({ text, context }),
+  });
+  return response.data;
+}
+
+export async function checkProposalCompliance(id: string): Promise<{
+  score: number;
+  checks: Array<{
+    requirement: string;
+    status: "met" | "missing" | "partial";
+    details: string;
+  }>;
+  recommendations: string[];
+}> {
+  const response = await fetchFromBackend<{
+    success: boolean;
+    data: {
+      score: number;
+      checks: Array<{
+        requirement: string;
+        status: "met" | "missing" | "partial";
+        details: string;
+      }>;
+      recommendations: string[];
+    };
+  }>(`/proposals/${id}/compliance`, {
+    method: "POST",
+  });
+  return response.data;
+}
+
+export async function submitProposal(id: string): Promise<Proposal> {
+  const response = await fetchFromBackend<{ success: boolean; data: Proposal }>(
+    `/proposals/${id}/submit`,
+    {
+      method: "POST",
+    },
+  );
+  return response.data;
+}
+
+// ============================================================================
 // Utility Functions
 // ============================================================================
 

@@ -1,90 +1,170 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Breadcrumb from "@/components/dashboard/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   FileText,
-  BookOpen,
-  ShieldCheck,
-  PencilLine,
-  Upload,
-  CheckCircle2,
   Wand2,
   Sparkles,
   Download,
   Building2,
   Calendar,
+  CheckCircle2,
+  Loader2,
+  Search,
 } from "lucide-react";
+import { clientApi, useApiToken, type Proposal } from "@/lib/client-api";
+import { useSession } from "next-auth/react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type TabKey = "new" | "drafts" | "submitted";
 
 export default function ProposalAssistantPage() {
+  const { data: session } = useSession();
+  const token = useApiToken();
+
   const [activeTab, setActiveTab] = useState<TabKey>("new");
-  const [activeStep, setActiveStep] = useState(1);
-  const savedDrafts = useMemo(
-    () => [
-      {
-        id: "1",
-        title: "IT Infrastructure Proposal",
-        agency: "Department of Defense",
-        lastSaved: "2 days ago",
-        due: "June 15, 2023",
-      },
-      {
-        id: "2",
-        title: "Cloud Migration Services",
-        agency: "Department of Energy",
-        lastSaved: "3 days ago",
-        due: "July 10, 2023",
-      },
-      {
-        id: "3",
-        title: "Network Security Assessment",
-        agency: "Department of Health",
-        lastSaved: "1 week ago",
-        due: "June 30, 2023",
-      },
-      {
-        id: "4",
-        title: "Data Analytics Platform",
-        agency: "General Services Administration",
-        lastSaved: "1 week ago",
-        due: "August 5, 2023",
-      },
-      {
-        id: "5",
-        title: "Software Development Services",
-        agency: "Department of Transportation",
-        lastSaved: "2 weeks ago",
-        due: "July 22, 2023",
-      },
-      {
-        id: "6",
-        title: "IT Infrastructure Proposal",
-        agency: "Department of Defense",
-        lastSaved: "2 days ago",
-        due: "June 15, 2023",
-      },
-    ],
-    []
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [compliance, setCompliance] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (token) {
+      loadProposals();
+      loadOpportunities();
+    }
+  }, [token]);
+
+  const loadProposals = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const response = await clientApi.getProposals(token);
+      setProposals(response.data);
+    } catch (error) {
+      console.error("Failed to load proposals:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadOpportunities = async () => {
+    if (!token) return;
+    try {
+      const response = await clientApi.getOpportunities(token, 1, 50);
+      setOpportunities(response.opportunities || []);
+    } catch (error) {
+      console.error("Failed to load opportunities:", error);
+    }
+  };
+
+  const handleGenerateProposal = async () => {
+    if (!token || !selectedOpportunity) return;
+    try {
+      setGenerating(true);
+      const response = await clientApi.generateProposal(selectedOpportunity, token);
+      setSelectedProposal(response.data);
+      await loadProposals();
+      setActiveTab("drafts");
+    } catch (error: any) {
+      alert(error.message || "Failed to generate proposal");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleCheckCompliance = async () => {
+    if (!token || !selectedProposal) return;
+    try {
+      setLoading(true);
+      const result = await clientApi.checkProposalCompliance(selectedProposal.id, token);
+      setCompliance(result);
+    } catch (error) {
+      console.error("Failed to check compliance:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateProposal = async (sections: any) => {
+    if (!token || !selectedProposal) return;
+    try {
+      await clientApi.updateProposal(selectedProposal.id, { sections }, token);
+      await loadProposals();
+    } catch (error) {
+      console.error("Failed to update proposal:", error);
+    }
+  };
+
+  const draftProposals = useMemo(
+    () => proposals.filter((p) => p.status === "DRAFT"),
+    [proposals]
   );
+
+  const submittedProposals = useMemo(
+    () => proposals.filter((p) => p.status !== "DRAFT"),
+    [proposals]
+  );
+
+  const filteredOpportunities = useMemo(() => {
+    if (!searchQuery) return opportunities;
+    return opportunities.filter((opp) =>
+      opp.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [opportunities, searchQuery]);
+
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "UNDER_REVIEW":
+        return "bg-orange-50 text-orange-700 border-orange-200";
+      case "ACCEPTED":
+        return "bg-green-50 text-green-700 border-green-200";
+      case "REJECTED":
+        return "bg-red-50 text-red-700 border-red-200";
+      case "SUBMITTED":
+        return "bg-blue-50 text-blue-700 border-blue-200";
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    return status.replace(/_/g, " ");
+  };
 
   return (
     <div className="bg-background h-full flex flex-col p-6">
-      {/* Main Content Container with White Background */}
       <div className="bg-card rounded-lg p-6 shadow-sm flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Header row spanning full width */}
         <div className="lg:col-span-12">
-          {/* Breadcrumb */}
           <Breadcrumb
             items={[{ label: "Home", href: "/" }, { label: "Proposal Assistant" }]}
             className="mb-6"
           />
 
-          {/* Header */}
           <div className="mb-2">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground">Proposal Assistant</h1>
             <p className="text-muted-foreground mt-1">
@@ -92,13 +172,12 @@ export default function ProposalAssistantPage() {
             </p>
           </div>
 
-          {/* Tabs */}
           <div className="mt-4">
             <div className="inline-flex rounded-md border bg-background p-1">
               {[
                 { key: "new", label: "New Proposal" },
-                { key: "drafts", label: "Saved Drafts" },
-                { key: "submitted", label: "Submitted" },
+                { key: "drafts", label: `Saved Drafts (${draftProposals.length})` },
+                { key: "submitted", label: `Submitted (${submittedProposals.length})` },
               ].map((tab) => (
                 <Button
                   key={tab.key}
@@ -117,79 +196,117 @@ export default function ProposalAssistantPage() {
           </div>
         </div>
 
-        {/* Main column */}
         <div className="flex flex-col lg:col-span-8 xl:col-span-9">
           {activeTab === "new" && (
             <>
-              {/* Stepper (read-only, with connectors) */}
               <Card>
-                <CardContent className="p-5">
-                  <div className="flex items-center">
-                    {[
-                      { step: 1, label: "Document Library", state: "done" as const },
-                      { step: 2, label: "Compliance Matrix", state: "done" as const },
-                      { step: 3, label: "Write Proposal", state: "current" as const },
-                      { step: 4, label: "Review & Export", state: "upcoming" as const },
-                    ].map((item, idx, arr) => (
-                      <div key={item.label} className="flex items-center flex-1">
-                        <div className="flex flex-col items-center gap-2 min-w-0">
-                          <div
-                            className={cn(
-                              "flex size-10 items-center justify-center rounded-full border",
-                              item.state === "done" && "bg-foreground text-background border-foreground",
-                              item.state === "current" && "bg-accent text-foreground border-transparent",
-                              item.state === "upcoming" && "bg-muted text-muted-foreground border-transparent"
-                            )}
-                          >
-                            {item.state === "done" ? (
-                              <CheckCircle2 className="size-5" />
-                            ) : (
-                              <span className="text-sm font-semibold">{item.step}</span>
-                            )}
-                          </div>
-                          <span className="truncate text-xs font-medium text-foreground/90">
-                            {item.label}
-                          </span>
-                        </div>
-                        {idx < arr.length - 1 && (
-                          <div className="mx-4 hidden sm:block h-px flex-1 bg-muted" />
-                        )}
-                      </div>
-                    ))}
+                <CardHeader className="pt-5 pb-2">
+                  <CardTitle>Generate Proposal from Opportunity</CardTitle>
+                  <CardDescription>
+                    Select an opportunity to automatically generate a proposal with AI
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 pb-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Search Opportunities</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search by title..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Select Opportunity</label>
+                    <Select value={selectedOpportunity} onValueChange={setSelectedOpportunity}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose an opportunity..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredOpportunities.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground">
+                            {searchQuery ? "No opportunities found" : "No opportunities available"}
+                          </div>
+                        ) : (
+                          filteredOpportunities.slice(0, 20).map((opp) => (
+                            <SelectItem key={opp.id} value={opp.id}>
+                              <div className="flex flex-col">
+                                <span className="font-medium">{opp.title}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {opp.fullParentPathName || opp.noticeId}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <Button
+                    className="gap-2 w-full"
+                    size="lg"
+                    onClick={handleGenerateProposal}
+                    disabled={!selectedOpportunity || generating}
+                  >
+                    {generating ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        Generating Proposal...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="size-4" />
+                        Generate Proposal with AI
+                      </>
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
 
-              {/* Editor section */}
-              <Card className="mt-6 flex-1">
+              <Card className="mt-6">
                 <CardHeader className="pt-5 pb-2">
-                  <CardTitle>Technical Approach - Section 3.1</CardTitle>
+                  <CardTitle>How It Works</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-5 pb-6">
-                  <div className="rounded-md border bg-muted/40 p-4">
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      <Sparkles className="size-4" /> AI Guidelines
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Include specific technical methodologies, timeline milestones, and past
-                      performance examples. Address all compliance requirements from Section 2.
-                    </p>
-                  </div>
-
-                  <textarea
-                    className="min-h-[260px] w-full resize-y rounded-lg border bg-background p-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    placeholder="Write your proposal section here..."
-                  />
-
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <Button className="gap-2">
-                      <Wand2 className="size-4" /> Generate with AI
-                    </Button>
-                    <Button variant="outline">Improve Writing</Button>
-                    <Button variant="outline">Check Compliance</Button>
-                    <Button variant="secondary" className="ml-auto gap-2">
-                      <CheckCircle2 className="size-4" /> Save Draft
-                    </Button>
+                <CardContent className="pb-6">
+                  <div className="space-y-4">
+                    {[
+                      {
+                        step: 1,
+                        title: "Select Opportunity",
+                        description: "Choose a government contract opportunity from SAM.gov",
+                      },
+                      {
+                        step: 2,
+                        title: "AI Generation",
+                        description:
+                          "Our AI analyzes requirements and generates a comprehensive proposal",
+                      },
+                      {
+                        step: 3,
+                        title: "Review & Edit",
+                        description: "Customize the generated content to match your needs",
+                      },
+                      {
+                        step: 4,
+                        title: "Check Compliance",
+                        description: "Verify your proposal meets all requirements",
+                      },
+                    ].map((item) => (
+                      <div key={item.step} className="flex gap-4">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold shrink-0">
+                          {item.step}
+                        </div>
+                        <div>
+                          <h4 className="font-medium">{item.title}</h4>
+                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
@@ -199,176 +316,245 @@ export default function ProposalAssistantPage() {
           {activeTab === "drafts" && (
             <Card>
               <CardContent className="p-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {savedDrafts.map((d) => (
-                    <div key={d.id} className="rounded-xl border p-4">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                        <span>Last saved: {d.lastSaved}</span>
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="size-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : draftProposals.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No draft proposals yet</p>
+                    <Button
+                      variant="outline"
+                      className="mt-4"
+                      onClick={() => setActiveTab("new")}
+                    >
+                      Create Your First Proposal
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {draftProposals.map((proposal) => (
+                      <div key={proposal.id} className="rounded-xl border p-4">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                          <span>Last saved: {formatDate(proposal.updatedAt)}</span>
+                        </div>
+                        <div className="text-sm font-semibold line-clamp-2">{proposal.title}</div>
+                        <div className="mt-1 text-xs text-muted-foreground line-clamp-1">
+                          {proposal.opportunity?.fullParentPathName || "No agency"}
+                        </div>
+                        {proposal.opportunity?.responseDeadLine && (
+                          <div className="mt-2 text-xs text-muted-foreground">
+                            Due: {formatDate(proposal.opportunity.responseDeadLine)}
+                          </div>
+                        )}
+                        {proposal.complianceScore !== undefined && (
+                          <div className="mt-2">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-muted-foreground">Compliance</span>
+                              <span className="font-medium">{proposal.complianceScore}%</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-muted">
+                              <div
+                                className="h-1.5 rounded-full bg-primary"
+                                style={{ width: `${proposal.complianceScore}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        <div className="mt-4 flex gap-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => setSelectedProposal(proposal)}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              setSelectedProposal(proposal);
+                            }}
+                          >
+                            Edit
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-sm font-semibold">{d.title}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">{d.agency}</div>
-                      <div className="mt-2 text-xs text-muted-foreground">Due: {d.due}</div>
-                      <div className="mt-4 flex gap-3">
-                        <Button variant="outline" className="px-4">Edit</Button>
-                        <Button className="px-5">Continue</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
 
-          {/* Submitted tab */}
           {activeTab === "submitted" && (
             <Card>
               <CardContent className="p-5">
-                <div className="space-y-4">
-                  {[
-                    {
-                      id: "1",
-                      title: "Cybersecurity Services Proposal",
-                      agency: "Department of Energy",
-                      submittedDate: "May 10, 2023",
-                      status: "Under Review",
-                      statusColor: "bg-orange-50 text-orange-700 border-orange-200",
-                    },
-                    {
-                      id: "2",
-                      title: "IT Support Services",
-                      agency: "Department of Defense",
-                      submittedDate: "April 22, 2023",
-                      status: "Accepted",
-                      statusColor: "bg-green-50 text-green-700 border-green-200",
-                    },
-                    {
-                      id: "3",
-                      title: "Cloud Infrastructure Migration",
-                      agency: "General Services Administration",
-                      submittedDate: "March 15, 2023",
-                      status: "Rejected",
-                      statusColor: "bg-red-50 text-red-700 border-red-200",
-                    },
-                  ].map((proposal) => (
-                    <div
-                      key={proposal.id}
-                      className="flex items-center gap-4 rounded-lg border p-4 hover:bg-accent/30 transition-colors"
-                    >
-                      {/* Document icon */}
-                      <div className="flex size-12 items-center justify-center rounded-md bg-muted">
-                        <FileText className="size-6 text-muted-foreground" />
-                      </div>
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="size-8 animate-spin text-muted-foreground" />
+                  </div>
+                ) : submittedProposals.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground">No submitted proposals yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {submittedProposals.map((proposal) => (
+                      <div
+                        key={proposal.id}
+                        className="flex items-center gap-4 rounded-lg border p-4 hover:bg-accent/30 transition-colors"
+                      >
+                        <div className="flex size-12 items-center justify-center rounded-md bg-muted">
+                          <FileText className="size-6 text-muted-foreground" />
+                        </div>
 
-                      {/* Middle section */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-foreground mb-2">{proposal.title}</h3>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="size-4" />
-                            <span>{proposal.agency}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="size-4" />
-                            <span>Submitted: {proposal.submittedDate}</span>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-foreground mb-2 line-clamp-1">
+                            {proposal.title}
+                          </h3>
+                          <div className="space-y-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <Building2 className="size-4" />
+                              <span className="line-clamp-1">
+                                {proposal.opportunity?.fullParentPathName || "N/A"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="size-4" />
+                              <span>Submitted: {formatDate(proposal.submittedAt)}</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* Right section */}
-                      <div className="flex items-center gap-3">
-                        <Button variant="outline" size="sm" className="gap-2">
-                          <Download className="size-4" />
-                          Download
-                        </Button>
-                        <span
-                          className={cn(
-                            "rounded-md border px-3 py-1 text-xs font-medium",
-                            proposal.statusColor
-                          )}
-                        >
-                          {proposal.status}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <Button variant="outline" size="sm" className="gap-2">
+                            <Download className="size-4" />
+                            Download
+                          </Button>
+                          <span
+                            className={cn(
+                              "rounded-md border px-3 py-1 text-xs font-medium whitespace-nowrap",
+                              getStatusColor(proposal.status)
+                            )}
+                          >
+                            {getStatusLabel(proposal.status)}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
         </div>
 
-        {/* Right section on the right for wide screens, below on mobile */}
         <div className="space-y-6 lg:col-span-4 xl:col-span-3">
-          <Card>
-            <CardHeader className="pt-5 pb-2">
-              <CardTitle>Compliance Score</CardTitle>
-              <CardDescription>Overall</CardDescription>
-            </CardHeader>
-            <CardContent className="pb-5">
-              <div>
-                <div className="h-2 w-full rounded-full bg-muted" />
-                <div className="-mt-2 h-2 w-[87%] rounded-full bg-primary" />
-                <div className="mt-2 text-sm font-medium">87%</div>
-              </div>
-
-              <div className="mt-4 space-y-2 text-sm">
-                {[
-                  { label: "Technical Requirements", status: "Met" },
-                  { label: "Past Performance", status: "Met" },
-                  { label: "Pricing Format", status: "Review" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center justify-between">
-                    <span className="text-muted-foreground">{item.label}</span>
-                    <span className="text-xs rounded-full border px-2 py-0.5">
-                      {item.status}
-                    </span>
+          {selectedProposal && (
+            <>
+              <Card>
+                <CardHeader className="pt-5 pb-2">
+                  <CardTitle>Compliance Score</CardTitle>
+                  <CardDescription>
+                    {selectedProposal.opportunity?.title || "Current Proposal"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pb-5">
+                  <div>
+                    <div className="h-2 w-full rounded-full bg-muted" />
+                    <div
+                      className="-mt-2 h-2 rounded-full bg-primary"
+                      style={{
+                        width: `${selectedProposal.complianceScore || 0}%`,
+                      }}
+                    />
+                    <div className="mt-2 text-sm font-medium">
+                      {selectedProposal.complianceScore || 0}%
+                    </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4 w-full"
+                    onClick={handleCheckCompliance}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin mr-2" />
+                        Checking...
+                      </>
+                    ) : (
+                      "Check Compliance"
+                    )}
+                  </Button>
+
+                  {compliance && (
+                    <div className="mt-4 space-y-2 text-sm">
+                      {compliance.checks.slice(0, 3).map((check: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between">
+                          <span className="text-muted-foreground">{check.requirement}</span>
+                          <span
+                            className={cn(
+                              "text-xs rounded-full border px-2 py-0.5",
+                              check.status === "met" && "bg-green-50 text-green-700 border-green-200",
+                              check.status === "missing" && "bg-red-50 text-red-700 border-red-200",
+                              check.status === "partial" &&
+                                "bg-orange-50 text-orange-700 border-orange-200"
+                            )}
+                          >
+                            {check.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pt-5 pb-2">
+                  <CardTitle>AI Recommendations</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 pb-5">
+                  {selectedProposal.aiRecommendations &&
+                  selectedProposal.aiRecommendations.length > 0 ? (
+                    selectedProposal.aiRecommendations.slice(0, 3).map((rec, idx) => (
+                      <div key={idx} className="rounded-md border p-3">
+                        <div className="text-sm font-medium">Recommendation {idx + 1}</div>
+                        <p className="text-xs text-muted-foreground mt-1">{rec}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      No recommendations available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
 
           <Card>
             <CardHeader className="pt-5 pb-2">
-              <CardTitle>AI Recommendations</CardTitle>
+              <CardTitle>Quick Stats</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 pb-5">
-              <div className="rounded-md border p-3">
-                <div className="text-sm font-medium">Add specific metrics</div>
-                <p className="text-xs text-muted-foreground">
-                  Include quantified outcomes from past projects
-                </p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Total Proposals</span>
+                <span className="text-sm font-medium">{proposals.length}</span>
               </div>
-              <div className="rounded-md border p-3">
-                <div className="text-sm font-medium">Strong technical depth</div>
-                <p className="text-xs text-muted-foreground">
-                  Your approach is well-detailed
-                </p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Draft</span>
+                <span className="text-sm font-medium">{draftProposals.length}</span>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Move Active Proposals to bottom */}
-          <Card>
-            <CardHeader className="pt-5 pb-2">
-              <CardTitle>Active Proposals</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 pb-5">
-              {[
-                { title: "DoD Cloud Modernization", status: "In Progress" },
-                { title: "DHS Cybersecurity RFP", status: "Review" },
-                { title: "GSA Data Platform", status: "Draft" },
-              ].map((p) => (
-                <div key={p.title} className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-2">
-                    <FileText className="size-4 text-muted-foreground" />
-                    <span className="text-sm">{p.title}</span>
-                  </div>
-                  <span className="text-xs rounded-full border px-2 py-0.5 text-muted-foreground">
-                    {p.status}
-                  </span>
-                </div>
-              ))}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Submitted</span>
+                <span className="text-sm font-medium">{submittedProposals.length}</span>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -376,5 +562,3 @@ export default function ProposalAssistantPage() {
     </div>
   );
 }
-
-

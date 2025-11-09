@@ -21,7 +21,7 @@ export const authConfig: NextAuthConfig = {
         if (credentials?.token) {
           try {
             const meResp = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
+              `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
               {
                 method: "GET",
                 headers: {
@@ -73,7 +73,7 @@ export const authConfig: NextAuthConfig = {
 
         try {
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/auth/login`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -122,7 +122,7 @@ export const authConfig: NextAuthConfig = {
           if (data?.token && !data?.user) {
             try {
               const meResp = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/auth/me`,
+                `${process.env.NEXT_PUBLIC_API_URL}/api/auth/me`,
                 {
                   method: "GET",
                   headers: {
@@ -191,7 +191,7 @@ export const authConfig: NextAuthConfig = {
 
         try {
           const resp = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/webauthn/login/verify`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/webauthn/login/verify`,
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -341,7 +341,7 @@ export const authConfig: NextAuthConfig = {
         try {
           // Call backend to create/update user
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth-handler`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth-handler`,
             {
               method: "POST",
               headers: {
