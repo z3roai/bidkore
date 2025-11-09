@@ -34,6 +34,7 @@ import {
   mockAISearchOpportunities,
   type AISearchOpportunity,
 } from "@/lib/mock-data";
+import { clientApi, useApiToken } from "@/lib/client-api";
 
 interface AISearchResponse {
   success: boolean;
@@ -60,6 +61,7 @@ interface AISearchResponse {
 
 export default function AISearchPage() {
   const { data: session } = useSession();
+  const token = useApiToken();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<AISearchResponse | null>(
@@ -90,42 +92,25 @@ export default function AISearchPage() {
       return;
     }
 
+    if (!token) {
+      setError("You must be logged in to perform a search");
+      return;
+    }
+
     setIsSearching(true);
     setError(null);
 
     try {
-      const apiBase =
-        (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(
-          /\/+$/,
-          ""
-        ) + "/ai/search";
+      const data = await clientApi.aiSearch(
+        searchQuery.trim(),
+        token,
+        {
+          includeRelated: true,
+          maxResults: 20,
+        }
+      );
 
-      const response = await fetch(apiBase, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.accessToken as string}`,
-        },
-        body: JSON.stringify({
-          query: searchQuery.trim(),
-          context: {
-            includeRelated: true,
-            maxResults: 20,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.error ||
-            errorData.message ||
-            `Search failed: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data: AISearchResponse = await response.json();
-      setSearchResults(data);
+      setSearchResults(data as AISearchResponse);
       setShowMockData(false);
     } catch (err) {
       setError(
