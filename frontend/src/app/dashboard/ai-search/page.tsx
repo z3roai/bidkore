@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Breadcrumb from "@/components/dashboard/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -30,10 +30,7 @@ import {
   X,
 } from "lucide-react";
 import { AISearchResultCard } from "@/components/dashboard/ai-search-result-card";
-import {
-  mockAISearchOpportunities,
-  type AISearchOpportunity,
-} from "@/lib/mock-data";
+import type { AISearchOpportunity } from "@/lib/mock-data";
 import { clientApi, useApiToken } from "@/lib/client-api";
 
 interface AISearchResponse {
@@ -63,14 +60,38 @@ export default function AISearchPage() {
   const { data: session } = useSession();
   const token = useApiToken();
   const [searchQuery, setSearchQuery] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(true);
   const [searchResults, setSearchResults] = useState<AISearchResponse | null>(
     null
   );
   const [error, setError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
-  const [showMockData, setShowMockData] = useState(true);
   const [showFilterSidebar, setShowFilterSidebar] = useState(false);
+
+  // Load initial data on mount
+  useEffect(() => {
+    const loadInitialData = async () => {
+      if (!token) return;
+
+      try {
+        setIsSearching(true);
+        setError(null);
+        // Load broad search for opportunities
+        const data = await clientApi.aiSearch("opportunities contract", token, {
+          maxResults: 15,
+        });
+        setSearchResults(data as AISearchResponse);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load opportunities"
+        );
+      } finally {
+        setIsSearching(false);
+      }
+    };
+
+    loadInitialData();
+  }, [token]);
   
   // Filter values
   const [keywordSearch, setKeywordSearch] = useState<string>("");
@@ -111,7 +132,6 @@ export default function AISearchPage() {
       );
 
       setSearchResults(data as AISearchResponse);
-      setShowMockData(false);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An error occurred during search"
@@ -349,30 +369,23 @@ export default function AISearchPage() {
           </div>
         )}
 
-        {/* Mock Data Cards */}
-        {showMockData && !searchResults && !isSearching && !error && (
-          <div>
-            <div className="mb-4 text-sm text-muted-foreground">
-              Showing 3 results
+        {/* Loading State */}
+        {isSearching && !searchResults && (
+          <div className="text-center py-12 text-muted-foreground">
+            <div className="inline-block">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
             </div>
-            <div className="space-y-4">
-              {mockAISearchOpportunities.map((opportunity) => (
-                <AISearchResultCard
-                  key={opportunity.noticeId}
-                  opportunity={opportunity}
-                />
-              ))}
-            </div>
+            <p className="text-lg mt-4">Loading opportunities...</p>
           </div>
         )}
 
         {/* Empty State */}
-        {!showMockData && !searchResults && !isSearching && !error && (
+        {!searchResults && !isSearching && !error && (
           <div className="text-center py-12 text-muted-foreground">
             <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg">Enter a search query to find opportunities</p>
+            <p className="text-lg">No opportunities found</p>
             <p className="text-sm mt-2">
-              Use natural language to describe what you&apos;re looking for
+              Try searching with different keywords
             </p>
           </div>
         )}

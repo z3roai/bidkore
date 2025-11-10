@@ -55,6 +55,11 @@ export function AISearchResultCard({
   // Determine notice type from setAside or use a default
   const noticeType = opportunity.setAside || "RFP";
 
+  const handleViewClick = () => {
+    // Store opportunity in sessionStorage so detail page can access it
+    sessionStorage.setItem(`opportunity_${opportunity.noticeId}`, JSON.stringify(opportunity));
+  };
+
   return (
     <Card className="border border-border hover:shadow-md transition-shadow">
       <CardContent className="p-6">
@@ -116,6 +121,7 @@ export function AISearchResultCard({
               size="sm"
               className="gap-2 min-w-[100px]"
               asChild
+              onClick={handleViewClick}
             >
               <Link href={`/dashboard/ai-search/${opportunity.noticeId}`}>
                 <Eye className="h-4 w-4" />

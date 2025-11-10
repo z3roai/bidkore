@@ -28,7 +28,7 @@ import {
   FileType,
 } from "lucide-react";
 import type { AISearchOpportunity } from "@/lib/mock-data";
-import { mockAISearchOpportunities } from "@/lib/mock-data";
+import { useApiToken } from "@/lib/client-api";
 
 type TabKey = "overview" | "description" | "attachments" | "ai-summary";
 
@@ -42,38 +42,32 @@ export default function AIOpportunityDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
+  const token = useApiToken();
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [opportunity, setOpportunity] = useState<AISearchOpportunity | null>(
     null
   );
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const opportunityId = params.id as string;
 
   useEffect(() => {
     const loadOpportunity = async () => {
       setLoading(true);
-      try {
-        // For now, use mock data. Later, fetch from API using noticeId
-        const mockOpp = mockAISearchOpportunities.find(
-          (opp) => opp.noticeId === opportunityId
-        );
+      setError(null);
 
-        if (mockOpp) {
-          setOpportunity(mockOpp);
+      try {
+        // Get opportunity from sessionStorage (passed from list view)
+        const stored = sessionStorage.getItem(`opportunity_${opportunityId}`);
+        if (stored) {
+          setOpportunity(JSON.parse(stored));
         } else {
-          // TODO: Fetch from API
-          // const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/+$/, "");
-          // const response = await fetch(`${apiBase}/ai/search/${opportunityId}`, {
-          //   headers: {
-          //     Authorization: `Bearer ${session?.accessToken as string}`,
-          //   },
-          // });
-          // const data = await response.json();
-          // setOpportunity(data.opportunity);
+          setError("Opportunity data not found. Please return to the search list and click an opportunity again.");
         }
-      } catch (error) {
-        console.error("Failed to load opportunity:", error);
+      } catch (err) {
+        console.error("Failed to load opportunity:", err);
+        setError("Failed to load opportunity details");
       } finally {
         setLoading(false);
       }
@@ -82,26 +76,31 @@ export default function AIOpportunityDetailPage() {
     if (opportunityId) {
       loadOpportunity();
     }
-  }, [opportunityId, session?.accessToken]);
+  }, [opportunityId]);
 
   if (loading) {
     return (
       <div className="bg-background p-6">
         <div className="bg-card rounded-lg p-6 shadow-sm">
           <div className="text-center py-12 text-muted-foreground">
-            Loading opportunity details...
+            <div className="inline-block">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+            </div>
+            <p className="text-lg mt-4">Loading opportunity details...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  if (!opportunity) {
+  if (error || !opportunity) {
     return (
       <div className="bg-background p-6">
         <div className="bg-card rounded-lg p-6 shadow-sm">
           <div className="text-center py-12 text-muted-foreground">
-            <p className="text-lg mb-4">Opportunity not found</p>
+            <p className="text-lg mb-4">
+              {error || "Opportunity not found"}
+            </p>
             <Link href="/dashboard/ai-search">
               <Button variant="outline">Back to Search</Button>
             </Link>
@@ -294,7 +293,7 @@ export default function AIOpportunityDetailPage() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-base">
-                        Total Small Business Set-Aside (SBA)
+                        {opportunity.setAside || "Not specified"}
                       </p>
                     </CardContent>
                   </Card>
@@ -314,7 +313,7 @@ export default function AIOpportunityDetailPage() {
                         rel="noopener noreferrer"
                         className="text-primary hover:underline flex items-center gap-2"
                       >
-                        {opportunity.uiLink || "https://sam.gov/opp/123456789/view"}
+                        {opportunity.uiLink || "https://sam.gov/"}
                         <ExternalLink className="h-4 w-4" />
                       </a>
                     </CardContent>
@@ -325,9 +324,8 @@ export default function AIOpportunityDetailPage() {
               {activeTab === "description" && (
                 <div className="space-y-6">
                   <div className="prose max-w-none">
-                    <p className="text-base leading-relaxed text-foreground">
-                      {opportunity.description ||
-                        "The Department of Defense seeks qualified contractors to provide comprehensive cloud infrastructure modernization services. This project involves migrating legacy systems to a secure, scalable cloud environment while ensuring compliance with federal security standards and regulations."}
+                    <p className="text-base leading-relaxed text-foreground whitespace-pre-wrap">
+                      {opportunity.description || "No description available"}
                     </p>
                   </div>
 
@@ -357,7 +355,7 @@ export default function AIOpportunityDetailPage() {
 
               {activeTab === "attachments" && (
                 <div className="space-y-4">
-                  {/* Mock attachments - in real app, fetch from API */}
+                  {/* Mock attachments */}
                   {[
                     {
                       id: "1",
@@ -375,38 +373,13 @@ export default function AIOpportunityDetailPage() {
                       uploadedDate: "April 01, 2025",
                       downloadUrl: "#",
                     },
-                    {
-                      id: "3",
-                      name: "Contract Terms and Conditions",
-                      type: "DOCX",
-                      size: "456 KB",
-                      uploadedDate: "April 01, 2025",
-                      downloadUrl: "#",
-                    },
-                    {
-                      id: "4",
-                      name: "Compliance Checklist",
-                      type: "XLSX",
-                      size: "128 KB",
-                      uploadedDate: "April 01, 2025",
-                      downloadUrl: "#",
-                    },
                   ].map((attachment) => (
                     <Card key={attachment.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-4">
                         <div className="flex items-center gap-4">
-                          {/* File Icon */}
                           <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                            {attachment.type === "PDF" ? (
-                              <FileText className="h-6 w-6 text-red-600 dark:text-red-400" />
-                            ) : attachment.type === "DOCX" ? (
-                              <File className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                            ) : (
-                              <FileType className="h-6 w-6 text-green-600 dark:text-green-400" />
-                            )}
+                            <FileText className="h-6 w-6 text-red-600 dark:text-red-400" />
                           </div>
-
-                          {/* File Info */}
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-foreground mb-1 truncate">
                               {attachment.name}
@@ -415,22 +388,9 @@ export default function AIOpportunityDetailPage() {
                               <span>{attachment.type}</span>
                               <span>•</span>
                               <span>{attachment.size}</span>
-                              <span>•</span>
-                              <span>{attachment.uploadedDate}</span>
                             </div>
                           </div>
-
-                          {/* Download Button */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-2"
-                            onClick={() => {
-                              if (attachment.downloadUrl && attachment.downloadUrl !== "#") {
-                                window.open(attachment.downloadUrl, "_blank");
-                              }
-                            }}
-                          >
+                          <Button variant="outline" size="sm" className="gap-2">
                             <Download className="h-4 w-4" />
                             Download
                           </Button>
@@ -443,7 +403,6 @@ export default function AIOpportunityDetailPage() {
 
               {activeTab === "ai-summary" && (
                 <div className="space-y-6">
-                  {/* AI-Generated Summary Section */}
                   <Card>
                     <CardContent className="pt-6">
                       <div className="flex items-start gap-3 mb-4">
@@ -452,82 +411,19 @@ export default function AIOpportunityDetailPage() {
                           AI-Generated Summary
                         </h3>
                       </div>
-                      <div className="prose max-w-none">
-                        <p className="text-base leading-relaxed text-foreground">
-                          {opportunity.assistantAdvice ||
-                            "This opportunity is ideal for small businesses with cloud migration expertise. The DoD is seeking a contractor to modernize their infrastructure with emphasis on security compliance (FedRAMP, NIST 800-53). Key requirements include AWS/Azure experience, DevSecOps capabilities, and prior federal contract experience. The estimated timeline is 18-24 months with potential for extensions."}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* AI Interaction Section */}
-                  <Card className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
-                    <CardContent className="pt-6">
-                      <div className="flex flex-col items-center text-center space-y-4">
-                        <Sparkles className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                        <h3 className="text-lg font-semibold text-foreground">
-                          How can I help you with this contract?
-                        </h3>
-                        <div className="flex gap-3">
-                          <Button variant="outline" className="gap-2">
-                            <FileText className="h-4 w-4" />
-                            Summarize Contract
-                          </Button>
-                          <MainButton className="gap-2">
-                            <FileText className="h-4 w-4" />
-                            Write Proposal
-                          </MainButton>
-                        </div>
-                      </div>
+                      <p className="text-base leading-relaxed text-foreground">
+                        {opportunity.assistantAdvice ||
+                          "This opportunity requires specialized expertise and compliance capabilities."}
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
               )}
             </div>
-
           </div>
 
           {/* Right Sidebar */}
           <div className="space-y-6">
-            {/* Contact Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {contacts.map((contact, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <p className="font-medium text-foreground">{contact.name}</p>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Mail className="h-4 w-4" />
-                        <a
-                          href={`mailto:${contact.email}`}
-                          className="hover:text-foreground transition-colors"
-                        >
-                          {contact.email}
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-4 w-4" />
-                        <a
-                          href={`tel:${contact.phone}`}
-                          className="hover:text-foreground transition-colors"
-                        >
-                          {contact.phone}
-                        </a>
-                      </div>
-                    </div>
-                    {idx < contacts.length - 1 && (
-                      <div className="border-t border-border pt-4" />
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Timeline */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -551,7 +447,6 @@ export default function AIOpportunityDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Estimated Value */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -561,9 +456,7 @@ export default function AIOpportunityDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-2xl font-bold text-foreground">
-                  {opportunity.estimatedValue
-                    ? `$${(opportunity.estimatedValue / 1000000).toFixed(1)}M - $${((opportunity.estimatedValue * 2) / 1000000).toFixed(1)}M`
-                    : "N/A"}
+                  {opportunity.estimatedValue ? formatValue(opportunity.estimatedValue) : "N/A"}
                 </p>
               </CardContent>
             </Card>
@@ -573,4 +466,3 @@ export default function AIOpportunityDetailPage() {
     </div>
   );
 }
-

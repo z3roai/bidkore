@@ -7,6 +7,46 @@ interface FetchOptions extends RequestInit {
   token?: string;
 }
 
+// Cache management for AI Search results
+const CACHE_KEY = "ai_search_cache";
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+interface CachedData<T> {
+  data: T;
+  timestamp: number;
+}
+
+function getCachedData<T>(key: string): T | null {
+  try {
+    const cached = localStorage.getItem(`${CACHE_KEY}_${key}`);
+    if (!cached) return null;
+
+    const parsed: CachedData<T> = JSON.parse(cached);
+    const isExpired = Date.now() - parsed.timestamp > CACHE_DURATION;
+
+    if (isExpired) {
+      localStorage.removeItem(`${CACHE_KEY}_${key}`);
+      return null;
+    }
+
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedData<T>(key: string, data: T): void {
+  try {
+    const cacheData: CachedData<T> = {
+      data,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(`${CACHE_KEY}_${key}`, JSON.stringify(cacheData));
+  } catch {
+    // Silently fail if localStorage is not available
+  }
+}
+
 async function fetchFromBackend<T>(
   path: string,
   options: FetchOptions = {},
@@ -319,6 +359,9 @@ export const clientApi = {
       winRate?: number;
       assistantAnalysis?: string[];
       assistantAdvice?: string;
+      enhancedData?: unknown;
+      historicalAwards?: unknown;
+      entityInfo?: unknown;
     }>;
     total: number;
     limit: number;
@@ -327,11 +370,24 @@ export const clientApi = {
     searchedAt: string;
     message?: string;
   }> {
-    return fetchFromBackend(`/api/ai/search`, {
+    // Check cache first
+    const cacheKey = `${query}_${JSON.stringify(context || {})}`;
+    const cached = getCachedData(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    // Fetch from API if not cached
+    const result = await fetchFromBackend(`/api/ai/search`, {
       method: "POST",
       body: JSON.stringify({ query, context }),
       token,
     });
+
+    // Cache the result
+    setCachedData(cacheKey, result);
+
+    return result;
   },
 };
 
