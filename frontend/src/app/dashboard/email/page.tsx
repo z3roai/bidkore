@@ -5,6 +5,15 @@ import Breadcrumb from "@/components/dashboard/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import {
   Mail,
@@ -105,6 +114,17 @@ export default function EmailPage() {
   const [selectedFolder, setSelectedFolder] = useState<FolderKey>("inbox");
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(mockEmails[3]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isComposeOpen, setIsComposeOpen] = useState(false);
+  const [showCc, setShowCc] = useState(false);
+  const [showBcc, setShowBcc] = useState(false);
+  const [composeData, setComposeData] = useState({
+    to: "",
+    cc: "",
+    bcc: "",
+    subject: "",
+    body: "",
+  });
+  const { addToast } = useToast();
 
   const filteredEmails = useMemo(() => {
     let emails = mockEmails.filter((email) => email.folder === selectedFolder);
@@ -151,7 +171,7 @@ export default function EmailPage() {
           <div className="w-80 border-r border-border flex flex-col bg-muted/30">
             {/* Compose */}
             <div className="p-4 border-b border-border">
-              <Button className="w-full gap-2">
+              <Button className="w-full gap-2" onClick={() => setIsComposeOpen(true)}>
                 <PencilLine className="size-4" />
                 Compose
               </Button>
@@ -393,6 +413,152 @@ export default function EmailPage() {
           </div>
         </div>
       </div>
+
+      {/* Compose Email Dialog */}
+      <Dialog open={isComposeOpen} onOpenChange={setIsComposeOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Compose Email</DialogTitle>
+            <DialogDescription>Create and send a new email message</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label htmlFor="to" className="text-sm font-medium">
+                  To
+                </label>
+                <div className="flex items-center gap-3 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setShowCc(!showCc)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Cc
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowBcc(!showBcc)}
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Bcc
+                  </button>
+                </div>
+              </div>
+              <Input
+                id="to"
+                type="email"
+                placeholder="recipient@example.com"
+                value={composeData.to}
+                onChange={(e) => setComposeData({ ...composeData, to: e.target.value })}
+                className="focus-visible:ring-0"
+              />
+            </div>
+            {showCc && (
+              <div className="space-y-2">
+                <label htmlFor="cc" className="text-sm font-medium">
+                  Cc
+                </label>
+                <Input
+                  id="cc"
+                  type="email"
+                  placeholder="cc@example.com"
+                  value={composeData.cc}
+                  onChange={(e) => setComposeData({ ...composeData, cc: e.target.value })}
+                  className="focus-visible:ring-0"
+                />
+              </div>
+            )}
+            {showBcc && (
+              <div className="space-y-2">
+                <label htmlFor="bcc" className="text-sm font-medium">
+                  Bcc
+                </label>
+                <Input
+                  id="bcc"
+                  type="email"
+                  placeholder="bcc@example.com"
+                  value={composeData.bcc}
+                  onChange={(e) => setComposeData({ ...composeData, bcc: e.target.value })}
+                  className="focus-visible:ring-0"
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <label htmlFor="subject" className="text-sm font-medium">
+                Subject
+              </label>
+              <Input
+                id="subject"
+                placeholder="Email subject"
+                value={composeData.subject}
+                onChange={(e) => setComposeData({ ...composeData, subject: e.target.value })}
+                className="focus-visible:ring-0"
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="body" className="text-sm font-medium">
+                Message
+              </label>
+              <textarea
+                id="body"
+                className="w-full min-h-[300px] rounded-lg border border-input bg-background px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-0 resize-none"
+                placeholder="Type your message here..."
+                value={composeData.body}
+                onChange={(e) => setComposeData({ ...composeData, body: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter className="flex items-center justify-between">
+            <Button variant="outline" className="gap-2">
+              <Paperclip className="size-4" />
+              Attach File
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setIsComposeOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                className="gap-2"
+                onClick={() => {
+                  // Validate required fields
+                  if (!composeData.to || !composeData.subject || !composeData.body) {
+                    addToast({
+                      title: "Missing Information",
+                      description: "Please fill in all required fields (To, Subject, and Message).",
+                      variant: "error",
+                      duration: 4000,
+                    });
+                    return;
+                  }
+
+                  // Save recipient email for notification
+                  const recipientEmail = composeData.to;
+
+                  // Handle send email logic here
+                  console.log("Sending email:", composeData);
+                  
+                  // Reset form
+                  setComposeData({ to: "", cc: "", bcc: "", subject: "", body: "" });
+                  setShowCc(false);
+                  setShowBcc(false);
+                  setIsComposeOpen(false);
+                  
+                  // Show success notification
+                  addToast({
+                    title: "Email Sent",
+                    description: `Your email to ${recipientEmail} has been sent successfully.`,
+                    variant: "success",
+                    duration: 4000,
+                  });
+                }}
+              >
+                <Send className="size-4" />
+                Send
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
